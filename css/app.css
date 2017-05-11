@@ -1,0 +1,51 @@
+#application hr {
+
+}
+
+#application #options-user span {
+    font-size: 14px;
+    color: #666;
+}
+
+
+#application #options-search-clear {
+    float: right;
+}
+
+#application #options-search {
+    width: calc(100% - 45px);
+    min-width: 100px;
+    padding: 6px;
+    border: 1px solid #aaa;
+    margin-top: 1px;
+}
+
+#application .options-container > div {
+
+    border: 1px solid #ddd;
+    padding: 8px;
+    margin-bottom: 2px;
+}
+
+#application .options-container > div:hover {
+    background-color: #eee;
+}
+
+#application .options-container > div a {
+    float: right;
+}
+
+#application .options-container > div a:hover, 
+#application .options-container > div a:active {
+    text-decoration: none;
+}
+
+#application .options-container > div a.btn {
+    margin: 0;
+    padding: 4px 16px;
+    font-size: 10px;
+    margin-top: -2px;
+    display: block;
+    width: auto;
+    height: auto;
+}
