@@ -1,3 +1,17 @@
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+
+#application hr {
+
+}
+
+#application #options-user span {
+    font-size: 14px;
+    color: #666;
+}
+
+
 #application #options-search-clear {
     float: right;
 }
@@ -10,25 +24,11 @@
     margin-top: 1px;
 }
 
-#application .options-container {
-    min-height: 200px;
-}
-
 #application .options-container > div {
+
     border: 1px solid #ddd;
     padding: 8px;
-    height: 38px;
     margin-bottom: 2px;
-    -webkit-transition: all 0.3s ease;
-    -moz-transition: all 0.3s ease;
-    transition: all 0.3s ease;
-}
-
-#application .options-container > div.filtered {
-    height: 1px;
-    padding: 0 8px;
-    overflow: hidden;
-    border-color: #eee;
 }
 
 #application .options-container > div:hover {
@@ -53,28 +53,49 @@
     width: auto;
     height: auto;
 }
-
-#application #options-user span {
-    font-size: 14px;
-    color: #888;
+input[name="id[]"] {
+  width: 5rem;
 }
 
-#application #options-user > div {
-    cursor: move; /* fallback if grab cursor is unsupported */
-    cursor: grab;
-    cursor: -moz-grab;
-    cursor: -webkit-grab;
+input[name="group[]"] {
+  width: calc(100% - 12rem);
 }
 
-#application #options-available {
-    overflow-y: scroll;
-    padding-right: 10px;
+input[type="number"] {
+  width: 5rem;
 }
 
-#application #timer-container span {
-    float: right;
-    display:block;
-    margin-top: 10px;
-    font-size: 12px;
-    padding: 4px;
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+ul li {
+  margin: 0.25rem 0;
+  height: 26px;
+  overflow: hidden;
+  transition: height 0.3s;
+}
+
+ul li span,
+ul li input {
+  transition: opacity 0.3s 0.3s;
+  opacity: 1;
+}
+
+
+ul li.added {
+  height: 0;
+}
+
+ul li.added span,
+ul li.added input {
+  opacity: 0;
+}
+
+ul li:last-child {
+  text-align: right;
+  padding-right: 0.25rem;
+  height: 36px;
 }
