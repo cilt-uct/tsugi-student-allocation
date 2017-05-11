@@ -10,9 +10,11 @@ $LAUNCH = LTIX::requireData();
 
 $p = $CFG->dbprefix;
 
-$json = Settings::linkGet('json');
-$user_json = $RESULT->getJSON();
-$RESULT->setJSON("{ 'x': 42 }");
+$json = Settings::linkGet('json'); // LTI_LINK JSON > contains the course settings
+
+//$RESULT->setJSON("[]");
+$user_json = $RESULT->getJSON();  // Saved Student Data
+
 
 // View
 $OUTPUT->header();
@@ -31,9 +33,12 @@ var_dump($user_json);
 
         <div class="row">
             <div class="col-xs-4">
-                <h1>Module</h1>
+                <h1><?= $LINK->title ?></h1>
             </div>
-            <div class="col-xs-8" id="timer-container">
+            <div id="option-notification" class="col-xs-5">
+                &nbsp;
+            </div>
+            <div id="timer-container" class="col-xs-3">
             </div>
         </div>
 
@@ -42,16 +47,14 @@ var_dump($user_json);
                 
                 <div class="row">
                     <div class="col-xs-8">
-                        <h4>My Choices</h4>
+                        <h4>My Choices <span id="option-user-title"></span></h4>
                     </div>
-                    <div class="col-xs-4">
+                    <div class="col-xs-4 text-right">
                         <button type="button" id="options-user-clear" class="btn">Clear</button>
                     </div>
                 </div>
                 <hr/>
-                <div id="options-user" class="options-container">
-                        
-                </div>    
+                <div id="options-user" class="options-container"></div>    
             </div>
             <div class="col-xs-7">
 
@@ -70,7 +73,7 @@ var_dump($user_json);
         </div>
 
         <hr/>
-        <button id="option-submit" type="button" class="btn btn-success">Submit</button>  
+        <button id="option-submit" type="button" data-disabled="1" class="btn btn-success hidden">Submit</button>  
         <button id="option-cancel" type="button" class="btn">Cancel</button>  
     </div>
 <?php
@@ -108,6 +111,7 @@ $OUTPUT->footerStart();
         var sorter = null,
             raw = {
                 expiry: "2017-05-12T08:00:00Z",
+                groups: { max: 3, min: 2},
                 all: [
                     {"id": "room1", name: "ARoom 1"}
                     ,{"id": "room2", name: "BRoom 2"}
@@ -119,7 +123,8 @@ $OUTPUT->footerStart();
                     {"id": "room3", name: "CRoom 3", order: 3}
                     ,{"id": "room5", name: "ERoom 5", order: 1}
                 ]
-            };
+            },
+            my_selection = <?= $user_json ?>;
 
         function getOption(_arr, _id) {
             var result = $.grep(_arr, function(e){ return e.id == _id; }); 
@@ -129,16 +134,56 @@ $OUTPUT->footerStart();
         function upFirst(string) 
         {
             return string.charAt(0).toUpperCase() + string.slice(1);
-        }  
+        }
+
+        function notify(type, msg) {
+           $('#option-notification').html(tmpl('tmpl-notify', {type: type, msg: msg}));
+        }
 
         $(function () {
 
             var selected = $('#options-user'),
+                selected_title = $('#option-user-title'),
                 available = $('#options-available'),
                 search_input = $('#options-search'),
                 search_id = null,
                 timer = $('#timer-container'),
-                timer_id = null;
+                timer_id = null,
+                btn_submit = $('#option-submit');
+
+            function showSelected() {
+                var t = timer.data('time'),
+                    valid = (t > 1) && (my_selection.length <= raw.groups.min) && (my_selection.length <= raw.groups.max);
+                selected.html(tmpl('tmpl-options-user', my_selection));
+                selected_title.html('<span class="small">('+ my_selection.length + (raw.groups.max > 0 ? ' of '+ raw.groups.max : '') +')</span>');
+
+                if (valid) {
+                    btn_submit.removeClass('disabled hidden').data('disabled', 0);
+                } else {
+                   btn_submit.addClass('disabled hidden').data('disabled', 1);    
+                   if (t < 1) {
+                       btn_submit.addClass('hidden');
+                   }
+                }
+            }
+            
+            function selectOption(_rel, _st){
+                var item = getOption(raw.all, _rel);   
+
+                if (raw.groups.max === 0) {
+                    $('#'+ _st + _rel).addClass('hidden');
+                    item.order = my_selection.length;
+                    my_selection.push(item);
+                    showSelected();
+                } else {
+                    if (my_selection.length < raw.groups.max) {
+                        $('#'+ _st + _rel).addClass('hidden');
+                        item.order = my_selection.length;
+                        my_selection.push(item);
+                        showSelected();
+                    }
+                }
+            } 
 
              var now = new Date(),
                 exp = Date.parse(raw.expiry),
@@ -152,33 +197,22 @@ $OUTPUT->footerStart();
                     timer.html(tmpl('tmpl-timer', { time: timer.data('time'), exp: raw.expiry }));
                     if (t <= 0) {
                         window.clearInterval(timer_id);
-                        $('#option-submit').addClass('disabled').data('disabled', 1).addClass('hidden');
+                        btn_submit.addClass('disabled').data('disabled', 1).addClass('hidden');
                     }
                 }, 1000);
-            } else {
-                $('#option-submit').addClass('disabled').data('disabled', 1).addClass('hidden');
             }
             timer.html(tmpl('tmpl-timer', { time: timer.data('time'), exp: raw.expiry }));
 
-            selected.html(tmpl('tmpl-options-user', raw.users));
-            available.html(tmpl('tmpl-options-selectable', {list: raw.all, used: raw.users}));
+            showSelected();
+            available.html(tmpl('tmpl-options-selectable', {list: raw.all, used: my_selection}));
             selected.height(available.height());
             available.height(available.height());
             search_input.html('');
 
-            function selectOption(_rel, _st){
-                var item = getOption(raw.all, _rel);   
-
-                $('#'+ _st + _rel).addClass('hidden');
-                item.order = raw.users.length;
-                raw.users.push(item);
-                selected.html(tmpl('tmpl-options-user', raw.users));
-            } 
-
             $('#options-user-clear').on('click', function(event){
-                raw.users = [];
+                my_selection = [];
                 $('#options-available > div:hidden').removeClass('hidden');
-                selected.html(tmpl('tmpl-options-user', raw.users));
+                showSelected();
             });
 
             available.on('click', 'a', function(event){
@@ -194,9 +228,9 @@ $OUTPUT->footerStart();
             selected.on('click', 'a', function(event){
                 event.preventDefault();
                 var rel = $(this).attr('rel');
-                raw.users = $.grep(raw.users, function(e){ return e.id != rel; });
+                my_selection = $.grep(my_selection, function(e){ return e.id != rel; });
                 $('#option-'+ rel).removeClass('hidden');
-                selected.html(tmpl('tmpl-options-user', raw.users));
+                showSelected();
             });
 
             sorter = Sortable.create(selected[0], {
@@ -207,9 +241,8 @@ $OUTPUT->footerStart();
                         item.order = i;
                         tmp.push(item);
                     });
-                    raw.users = tmp;
-                    console.log(tmp);
-                    selected.html(tmpl('tmpl-options-user', raw.users));
+                    my_selection = tmp;
+                    selected.html(tmpl('tmpl-options-user', my_selection));
                 }
             });
 
@@ -246,6 +279,30 @@ $OUTPUT->footerStart();
                 search_id = window.setTimeout(function(){
                     doFilter(search_input.val());
                 }, 300);
+            });
+
+            btn_submit.on('click', function(event) {
+                event.preventDefault();
+
+                $.ajax({
+                    url: "<?= addSession('setchoice.php'); ?>",
+                    type: 'POST',
+                    data: {selection: my_selection}
+                }).done(function(res) {
+                }).fail(function(err) {
+                }).always(function() {
+                });
+
+/*
+                console.log('submit: ' + ((btn_submit.data('disabled') != '1') && (!btn_submit.hasClass('disabled'))) );
+
+                if ((btn_submit.data('disabled') != '1') && (!btn_submit.hasClass('disabled'))) {
+
+                    if (my_selection < raw.groups.min) {
+                        notify('warning', '<strong>Warning</strong> please select at least '+ raw.groups.min +' option'+ (raw.groups.min > 1 ? 's':'') +'.');
+                    }
+                }
+*/
             });
         });
     </script>
@@ -323,6 +380,10 @@ $OUTPUT->footerStart();
             print('<span class="label '+ ( o.time <= 600 ? 'label-danger' : (o.time <= 1800 ? 'label-warning' : 'label-info'))+'"> Closing in '+ result.join('&nbsp;') +'</span>', true);
         }
     %}
+    </script>
+
+    <script type="text/x-tmpl" id="tmpl-notify">
+    <div class="alert alert-{%=o.type%}">{%#o.msg%}</div>
     </script>
 <?php
 $OUTPUT->footerEnd();
