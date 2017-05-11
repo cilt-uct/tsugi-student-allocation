@@ -45,6 +45,9 @@
 
 #application .options-container > div a {
     float: right;
+    padding: 10px;
+    display: block;
+    margin-top: -8px;
 }
 
 #application .options-container > div a:hover, 
@@ -62,16 +65,24 @@
     height: auto;
 }
 
+#application #options-user > div {
+    padding-right: 0px;
+}
+
 #application #options-user span {
     font-size: 14px;
     color: #888;
 }
 
-#application #options-user > div {
+#application #options-user.sortable > div {
     cursor: move; /* fallback if grab cursor is unsupported */
     cursor: grab;
     cursor: -moz-grab;
     cursor: -webkit-grab;
+}
+
+#application #options-user.static > div:hover {
+    background-color: inherit;
 }
 
 #application #options-available {
