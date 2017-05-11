@@ -1,13 +1,3 @@
-#application hr {
-
-}
-
-#application #options-user span {
-    font-size: 14px;
-    color: #666;
-}
-
-
 #application #options-search-clear {
     float: right;
 }
@@ -20,11 +10,25 @@
     margin-top: 1px;
 }
 
-#application .options-container > div {
+#application .options-container {
+    min-height: 200px;
+}
 
+#application .options-container > div {
     border: 1px solid #ddd;
     padding: 8px;
+    height: 38px;
     margin-bottom: 2px;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    transition: all 0.3s ease;
+}
+
+#application .options-container > div.filtered {
+    height: 1px;
+    padding: 0 8px;
+    overflow: hidden;
+    border-color: #eee;
 }
 
 #application .options-container > div:hover {
@@ -48,4 +52,29 @@
     display: block;
     width: auto;
     height: auto;
+}
+
+#application #options-user span {
+    font-size: 14px;
+    color: #888;
+}
+
+#application #options-user > div {
+    cursor: move; /* fallback if grab cursor is unsupported */
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+}
+
+#application #options-available {
+    overflow-y: scroll;
+    padding-right: 10px;
+}
+
+#application #timer-container span {
+    float: right;
+    display:block;
+    margin-top: 10px;
+    font-size: 12px;
+    padding: 4px;
 }
