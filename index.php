@@ -11,6 +11,8 @@ $LAUNCH = LTIX::requireData();
 $p = $CFG->dbprefix;
 
 $json = Settings::linkGet('json');
+$user_json = $RESULT->getJSON();
+$RESULT->setJSON("{ 'x': 42 }");
 
 // View
 $OUTPUT->header();
@@ -20,11 +22,11 @@ $OUTPUT->header();
 $OUTPUT->bodyStart();
 $OUTPUT->topNav();
 $OUTPUT->flashMessages();
+if ( $USER->instructor ) {
+    echo('<a href="configure.php">Configure</a>'."\n");
+}
+var_dump($user_json);
 ?>
-<h1>Hello</h1>
-<p>
-<a href="configure.php">Configure</a>
-</p>
     <div id="application" class="container">
 
         <div class="row">
