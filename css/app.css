@@ -1,3 +1,7 @@
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+
 #application hr {
 
 }
@@ -48,4 +52,50 @@
     display: block;
     width: auto;
     height: auto;
+}
+input[name="id[]"] {
+  width: 5rem;
+}
+
+input[name="group[]"] {
+  width: calc(100% - 12rem);
+}
+
+input[type="number"] {
+  width: 5rem;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+ul li {
+  margin: 0.25rem 0;
+  height: 26px;
+  overflow: hidden;
+  transition: height 0.3s;
+}
+
+ul li span,
+ul li input {
+  transition: opacity 0.3s 0.3s;
+  opacity: 1;
+}
+
+
+ul li.added {
+  height: 0;
+}
+
+ul li.added span,
+ul li.added input {
+  opacity: 0;
+}
+
+ul li:last-child {
+  text-align: right;
+  padding-right: 0.25rem;
+  height: 36px;
 }

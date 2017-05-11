@@ -24,6 +24,7 @@ $OUTPUT->flashMessages();
 <h1>Hello</h1>
 <p>
 <a href="configure.php">Configure</a>
+<a href="roomsetup.php">Setup schedule</a>
 </p>
     <div id="application" class="container">
 
