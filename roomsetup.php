@@ -203,6 +203,11 @@ $OUTPUT->footerStart();
          if ($(parent).siblings('.inputs').length > 0) {
            $(parent).remove();
          }
+         else {
+           $(parent).find('input').each(function() {
+             $(this).val('');
+           });
+         }
        }, 300);
      });
     </script>
