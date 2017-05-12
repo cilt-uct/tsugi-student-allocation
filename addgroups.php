@@ -36,7 +36,7 @@ $entries['active'] = true;
 //  array('json' => $_POST['entries'])
 //);
 
-Settings::linkSet('json', $active);
+Settings::linkSet('json', $entries);
 
 var_dump(Settings::linkGet('json'));
 

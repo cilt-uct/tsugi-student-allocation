@@ -25,6 +25,7 @@ $OUTPUT->bodyStart();
 $OUTPUT->topNav();
 $OUTPUT->flashMessages();
 ?>
+    <script src="js/moment.min.js"></script>
     <div id="application" class="container">
 
         <div class="row">
@@ -123,8 +124,13 @@ $OUTPUT->footerStart();
         }
         var posts = {groups: json};
         var expiry = $('input[name=expiry_date]').val();
+        if (!expiry || moment(expiry).isBefore(moment())) {
+          alert('Please set a future date for expiry');
+          return;
+        }
+        else console.log('proceed on date');
         if (expiry) {
-          posts.expiry = expiry;
+          posts.expiry = moment(expiry).utc().toString();
         }
         var maxSelections = $('input[name=max_selections]').val();
         if (maxSelections) {
