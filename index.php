@@ -414,7 +414,8 @@ $OUTPUT->footerStart();
                 {% if (o.limit.max == o.limit.min) { %}
                     <span>Please select <strong>{%=o.limit.max%}</strong> option{%=(o.limit.max > 1?'s':'')%}.</span>
                 {% } else { %}
-                    <span>Please select at least <strong>{%=o.limit.min%}</strong> option{%=(o.limit.min > 1?'s':'')%}, maximum of <strong>{%=o.limit.max%}</strong>.</span>
+                    <span>Please select {%#(o.limit.min > 0 ? 'at least <strong>'+ o.limit.min +'</strong> option'+ (o.limit.min > 1?'s':'') +', maximum of ':'')%}
+                    <strong>{%=o.limit.max%}</strong>{%=(o.limit.min == 0? ' option'+ (o.limit.max > 1?'s':''):'')%}.</span>
                 {% } %}
             {% } else { %}
                 <span>Please select your options.</span>
@@ -429,7 +430,7 @@ $OUTPUT->footerStart();
             {% if (o.limit.max == o.limit.min) { %}
                 (selected {%=o.len%} of {%=o.limit.max%})
             {% } else { %}
-                (selected {%=o.len%} of {%=o.limit.max%}, at least {%=o.limit.min%})
+                (selected {%=o.len%} of {%=o.limit.max%}{%=(o.limit.min > 0 ? ', at least '+ o.limit.min:'')%})
             {% } %}
         {% } %}
         </span>
