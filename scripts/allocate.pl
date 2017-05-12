@@ -7,6 +7,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use studentAllocation;
 use List::Util qw(shuffle);
+use Getopt::Long;
 
 # Student allocation algorithm
 # Richard D. Morey, 18 March 2013
@@ -19,6 +20,8 @@ use List::Util qw(shuffle);
 
 # CONFIGURATION ###########################################################
 
+# Adapted for https://github.com/cilt-uct/tsugi-student-allocation
+
 # print updates?
 my $updates      = 1; # 0 for no updates 
 
@@ -26,15 +29,17 @@ my $updates      = 1; # 0 for no updates
 my $distributeUnassigned = 1;
 
 # Define file names for input 
-my $studentsFN   = "../input/students.txt";
-my $lecturersFN  = "../input/lecturers.txt";
-my $projectsFN   = "../input/projects.txt";
+my $studentsFN   = $ARGV[0];
+my $lecturersFN  = $ARGV[1];
+my $projectsFN   = $ARGV[2];
 
 # Define file name for output 
 # These files will be overwritten! 
-my $outStudentsFN  = "../output/studentAssignments.txt";
-my $outProjectsFN  = "../output/projectAssignments.txt";
-my $outLecturersFN = "../output/lecturerAssignments.txt";
+my $outStudentsFN  = $ARGV[3];
+my $outProjectsFN  = $ARGV[4];
+my $outLecturersFN = $ARGV[5];
+
+die "\nSyntax: allocate.pl input-students input-lecturers input-projects output-students output-projects output-lecturers\n" if !defined($ARGV[5]);
 
 # Change random seed for shuffling of students and projects
 my $randomize    = 0; # If 0, no randomization
