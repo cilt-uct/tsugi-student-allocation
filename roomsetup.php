@@ -45,25 +45,28 @@ $OUTPUT->flashMessages();
                 <ul id="options-user" class="options-container">
                   <li>
                     <span style="display: inline-block; width: 5rem;">ID</span>
-                    <span style="display: inline-block; width: calc(100% - 13rem); text-align: center;">Group Name</span>
-                    <span style="display: inline-block; width: 6rem; float: right; padding-right: 0.5rem;"># Users</span>
+                    <span style="display: inline-block; width: calc(100% - 14rem); text-align: center;">Group Name</span>
+                    <span style="display: inline-block; width: 6rem;"># Users</span>
                   </li>
                   <li class="inputs">
                     <input type="text" name="id[]" />
                     <input type="text" name="group[]" />
                     <input type="number" name="occupancy[]" />
+                    <a href="#" class="glyphicon glyphicon-remove"></a>
                   </li>
                   <li class="inputs">
                     <input type="text" name="id[]" />
                     <input type="text" name="group[]" />
                     <input type="number" name="occupancy[]" />
+                    <a href="#" class="glyphicon glyphicon-remove"></a>
                   </li>
                   <li class="inputs">
                     <input type="text" name="id[]" />
                     <input type="text" name="group[]" />
                     <input type="number" name="occupancy[]" />
+                    <a href="#" class="glyphicon glyphicon-remove"></a>
                   </li>
-                  <li><button id="addAnother" type="button" class="btn btn-success">Add Another</button></li>
+                  <li><button id="addAnother" type="button" class="btn btn-success" style="margin-right: 3rem;">Add Another</button></li>
                 </ul>
               <button class="btn btn-success">Submit</button>  
               <button type="button" class="btn">Cancel</button>  
@@ -128,7 +131,6 @@ $OUTPUT->footerStart();
           alert('Please set a future date for expiry');
           return;
         }
-        else console.log('proceed on date');
         if (expiry) {
           posts.expiry = moment(expiry).utc().toString();
         }
@@ -155,6 +157,11 @@ $OUTPUT->footerStart();
       });
 
       $('#addAnother').on('click', function(e) {
+        var $curInput = $('form ul').find('li:nth-child(2)');
+        if ($curInput.hasClass('added') && $curInput.siblings('.inputs').length === 0) {
+          $curInput.removeClass('added');
+          return;
+        }
         var $newInput = $('form ul').find('li:nth-child(2)').clone();
         $newInput.find('input').each(function() {
           $(this).val('');
@@ -168,7 +175,6 @@ $OUTPUT->footerStart();
         var currentGroups = $('form ul li.inputs').length;
         var addGroupBtn = $('#addAnother')[0];
         state.groups.forEach(function(group, i) {
-          console.log(i, currentGroups);
           if (currentGroups <= i) {
             addGroupBtn.click();
             currentGroups++;
@@ -190,6 +196,15 @@ $OUTPUT->footerStart();
          $('input[name=expiry_date]').val(moment(state.expiry).format() || '');
        }
      }
+     $('form').on('click','.inputs a.glyphicon-remove', function(e) {
+       var parent = $(this).parent()[0];
+       $(parent).addClass('added');
+       setTimeout(function() {
+         if ($(parent).siblings('.inputs').length > 0) {
+           $(parent).remove();
+         }
+       }, 300);
+     });
     </script>
 
 
