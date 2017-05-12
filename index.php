@@ -26,15 +26,22 @@ $OUTPUT->header();
 $OUTPUT->bodyStart();
 $OUTPUT->topNav();
 $OUTPUT->flashMessages();
+
 if ( $USER->instructor ) {
-    echo('<a href="configure.php">Configure</a>'."\n");
-    echo('<a href="roomsetup.php">Administrate</a>'."\n");
 ?>
-<form method="GET" action="perl.php" target="iframe-frame" style="display: inline">
-    <input type="hidden" name="link_id" value="<?= $LINK->id ?>">
-    <input type="submit" value="Run Assignments"
-        onclick="showModalIframe(this.title, 'iframe-dialog', 'iframe-frame', _TSUGI.spinnerUrl, true);" >
-    </form>
+<!-- Nav tabs -->
+<ul class="nav nav-tabs">
+    <li class="active"><a href="#">My Selection</a></li>
+    <li><a href="roomsetup.php">Administrate</a></li>
+    <li><a href="configure.php">Configure</a></li>
+    <li>
+        <form method="GET" action="perl.php" target="iframe-frame" style="display: inline">
+            <input type="hidden" name="link_id" value="<?= $LINK->id ?>">
+            <input type="submit" value="Run Assignments"
+                onclick="showModalIframe(this.title, 'iframe-dialog', 'iframe-frame', _TSUGI.spinnerUrl, true);" >
+        </form>
+    </li>
+</ul>
 <?php
 }
 
@@ -52,18 +59,6 @@ if (isset($selection->{'result'}->{'name'})) {
 $settings = Settings::linkGet('json');
 $json = json_encode($settings);
 
-//var_Dump($settings);
-/*
-$json ='{ "expiry": "2017-05-14T08:00:00Z",'
-            .'"constraints": { "max": 3, "min": 2},'
-            .'"groups": ['
-                .'{"id": "room1", "name": "ARoom 1"}'
-                .',{"id": "room2", "name": "BRoom 2"}'
-                .',{"id": "room3", "name": "CRoom 3"}'
-                .',{"id": "room4", "name": "DRoom 4"}'
-                .',{"id": "room5", "name": "ERoom 5"}'
-            .']}';
-*/
 $date_now = new DateTime();
 $date_expiry = new DateTime();
 if (isset($settings['expiry'])) {
