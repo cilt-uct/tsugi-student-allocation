@@ -25,7 +25,7 @@
 
     <div id="application" class="container">
 
-        <div class="row">
+        <!--div class="row">
             <div class="col-xs-4">
                 <h1>Module</h1>
             </div>
@@ -67,7 +67,12 @@
 
         <hr/>
         <button id="option-submit" type="button" class="btn btn-success">Submit</button>  
-        <button id="option-cancel" type="button" class="btn">Cancel</button>  
+        <button id="option-cancel" type="button" class="btn">Cancel</button-->  
+
+
+        <div id="container" style="width: 75%;">
+            <canvas id="canvas"></canvas>
+        </div>
     </div>
 
 	<!-- Bootstrap core JavaScript
@@ -78,7 +83,41 @@
 	<script src="js/tmpl.min.js"></script>
     <script src="js/Sortable.min.js"></script>
     <script src="js/moment.min.js"></script>
-    <script type="text/javascript">    
+    <script src="js/Chart.bundle.min.js"></script>
+
+    <script type="text/javascript">
+        function getRandom(len, i) { i = i || 0; var r = Math.floor(Math.random() * (len - 1 + 1)) + i;  return r; }
+
+        var color = Chart.helpers.color;
+        var barChartData = {
+            labels: [1], //, "2", "3", "4", "5", "6", "7", "8"],
+            datasets: [{
+                //label: 'Student Allocation',
+                backgroundColor: color('#006699').alpha(0.5).rgbString(),
+                borderColor: '#006699',
+                borderWidth: 1,
+                data: [ Math.round(getRandom(10, 100)) ]
+            }]
+        };
+
+        $(function () {
+
+            var ctx = $('#canvas')[0].getContext("2d");
+            window.myBar = new Chart(ctx, {
+                type: 'bar',
+                data: barChartData,
+                options: {
+                    responsive: true,
+                    legend: false,
+                    title: {
+                        display: true,
+                        text: 'Student Allocation'
+                    }
+                }
+            });            
+        });
+
+    /*
         var num = ['st','nd','rd'],
             timespan = { year: 31536000,
                 month: 2592000,
@@ -232,6 +271,7 @@
                 }, 300);
             });
         });
+    */
     </script>
 
 

@@ -57,8 +57,6 @@ if (isset($selection->{'result'}->{'name'})) {
 }
 
 $settings = Settings::linkGet('json');
-$json = json_encode($settings);
-
 $date_now = new DateTime();
 $date_expiry = new DateTime();
 if (isset($settings['expiry'])) {
@@ -67,6 +65,7 @@ if (isset($settings['expiry'])) {
 
 $date_left = $date_expiry->getTimestamp() - $date_now->getTimestamp();
 
+$json = json_encode($settings);
 if (json_last_error() <> JSON_ERROR_NONE) {
     print "error<br/>";
     print json_last_error_msg() . "<br>";
@@ -74,7 +73,15 @@ if (json_last_error() <> JSON_ERROR_NONE) {
     $json = '{ "expiry": "'. date("Y-m-d") .'T06:00:00Z","constraints": { "max": -1}, groups: []}';
     $date_left = -1;
 }
+
+/*
+print "<br/>";
+var_dump($settings);
+print "<br/>";
+var_dump($json);
+*/
 ?>
+
 <div id="iframe-dialog" title="Read Only Dialog" style="display: none;">
    <iframe name="iframe-frame" style="height:400px" id="iframe-frame"
     src="<?= $OUTPUT->getSpinnerUrl() ?>"></iframe>
@@ -157,6 +164,9 @@ if(strlen($json) < 1 ) {
 </pre>
 <?php
 }
+?>
+
+<?php
 $OUTPUT->footerStart();
 ?>
 	<!-- Bootstrap core JavaScript
@@ -165,6 +175,7 @@ $OUTPUT->footerStart();
 	<script src="js/tmpl.min.js"></script>
     <script src="js/Sortable.min.js"></script>
     <script src="js/moment.min.js"></script>
+    <script src="js/Chart.bundle.min.js"></script>
     <script src="js/app.js"></script>
     <script type="text/javascript">    
         
@@ -356,6 +367,111 @@ $OUTPUT->footerStart();
             });
         });
     </script>
+
+<?php
+if ( $USER->instructor ) {
+
+    $course_settings = Settings::linkGet('json'); // LTI_LINK JSON > contains the course settings
+
+    $projects = array();
+    $groups = $course_settings['groups'];
+    foreach($course_settings['groups'] as $group ) {
+/*        
+        $x = new stdClass();
+        $x->id = $group['id'];
+        $x->val = 0;
+*/
+        $projects[$group['id']] = array('name' => $group['name'], 'val' => 0);
+    }
+
+    $stmt = $PDOX->queryDie(
+        "SELECT usr.displayname, lti.json FROM {$CFG->dbprefix}lti_result lti
+            left join {$CFG->dbprefix}lti_user usr on usr.user_id = lti.user_id
+            WHERE link_id = :LID",
+        array(":LID" => $LINK->id)
+    );
+    $rows = $stmt->fetchAll();
+
+    //$students = array();
+    foreach($rows as $row) {
+        $student_json = json_decode($row['json']);
+        
+        $prefstr = '';
+        foreach($student_json->selection as $pref) {
+
+            $projects[$pref->id]['val'] = $projects[$pref->id]['val'] + 1;
+
+            if ( strlen($prefstr) > 0 ) $prefstr .= ' ';
+            $prefstr .= 'p'.$pref->id;
+        }
+        
+        print $row['displayname'] .' : '. $prefstr .'<br/>';
+    }
+
+    print json_encode($projects);
+?>
+    <div id="container" style="width: 75%;">
+        <canvas id="canvas"></canvas>
+    </div>
+
+<script type="text/javascript">
+    function getRandom(len, i) { i = i || 0; var r = Math.floor(Math.random() * (len - 1 + 1)) + i;  return r; }
+
+    var color = Chart.helpers.color,
+        counts = <?=json_encode($projects)?>,
+        chartData = {
+            labels: [1],
+            datasets: [{
+                backgroundColor: color('#006699').alpha(0.5).rgbString(),
+                borderColor: '#006699',
+                borderWidth: 1,
+                data: [0]
+            }]
+        };
+
+    $(function () {
+
+        var lbl = [],
+            data = [];
+        $.each(counts, function(i, el) {
+            lbl.push(el.name);
+            data.push(el.val);
+        });
+
+        chartData.labels = lbl;
+        chartData.datasets[0].data = data;
+
+        var ctx = $('#canvas')[0].getContext("2d");
+        window.myBar = new Chart(ctx, {
+            type: 'bar',
+            data: chartData,
+            options: {
+                responsive: true,
+                legend: false,
+                animation : false,
+                title: {
+                    display: true,
+                    text: 'Student Allocation'
+                },
+                scales: {
+                    yAxes: [{
+                        display: true,
+                        ticks: {
+                            min: 0,    // minimum will be 0, unless there is a lower value.
+                            max: 10,  // maximum will be 0, unless there is a lower value.
+                            beginAtZero: true,   // minimum value will be 0.
+                            stepSize: 1
+                        }
+                    }]
+                }
+            }
+        });            
+    });
+</script>
+<?php
+}
+?>
+
 
 <?php if ($date_left > 0) { ?>
 
