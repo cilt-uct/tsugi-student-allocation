@@ -30,9 +30,9 @@ if ( $USER->instructor ) {
     echo('<a href="configure.php">Configure</a>'."\n");
     echo('<a href="roomsetup.php">Administrate</a>'."\n");
 ?>
-<form method="GET" action="perl.php" target="iframe-frame">
+<form method="GET" action="perl.php" target="iframe-frame" style="display: inline">
     <input type="hidden" name="link_id" value="<?= $LINK->id ?>">
-    <input type="submit" value="Run Perl"
+    <input type="submit" value="Run Assignments"
         onclick="showModalIframe(this.title, 'iframe-dialog', 'iframe-frame', _TSUGI.spinnerUrl, true);" >
     </form>
 <?php
