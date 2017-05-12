@@ -40,7 +40,7 @@ $OUTPUT->flashMessages();
                 <hr/>
                 <button type="button" class="btn btn-success"><a href="index.php" style="color: inherit;">Back to Selections</a></button>
                 <p style="display: block; margin-top: 0.5rem">Expiry: <input type="datetime-local" name="expiry_date" /></p>
-                <p>Max # selections: <input type="number" name="max_selections"/></p>
+                <p># selections: <input type="number" name="min_selections" placeholder="Min" /> / <input placeholder="Max" type="number" name="max_selections"/></p>
                 <ul id="options-user" class="options-container">
                   <li>
                     <span style="display: inline-block; width: 5rem;">ID</span>
@@ -130,6 +130,10 @@ $OUTPUT->footerStart();
         if (maxSelections) {
           posts.constraints = {max: maxSelections};
         }
+        var minSelections = $('input[name=min_selections]').val();
+        if (minSelections) {
+          posts.constraints = {max: minSelections};
+        }
         $.ajax({
           url: '<?= addSession("addgroups.php"); ?>',
           type: 'POST',
@@ -153,14 +157,15 @@ $OUTPUT->footerStart();
       });
 
       if (state.hasOwnProperty('groups') && state.groups.length > 0) {
-        var currentGroups = $('form ul li').length;
+        var currentGroups = $('form ul li.inputs').length;
         var addGroupBtn = $('#addAnother')[0];
-        console.log(addGroupBtn);
         state.groups.forEach(function(group, i) {
+          console.log(i, currentGroups);
           if (currentGroups <= i) {
             addGroupBtn.click();
             currentGroups++;
           }
+          else console.log('no need to add');
           var item = $('form ul li.inputs')[i];
           if (!item) return;
           item.querySelector('input[name="id[]"]').value = (group.id);
