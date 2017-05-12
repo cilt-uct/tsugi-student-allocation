@@ -40,7 +40,7 @@ $OUTPUT->flashMessages();
             <form method="post" action="" class="col-xs-7">
                 <hr/>
                 <button type="button" class="btn btn-success"><a href="index.php" style="color: inherit;">Back to Selections</a></button>
-                <p style="display: block; margin-top: 0.5rem">Expiry: <input type="datetime-local" name="expiry_date" /></p>
+                <p style="display: block; margin-top: 0.5rem">Expiry: <input type="text" name="expiry_date" /></p>
                 <p># selections: <input type="number" name="min_selections" placeholder="Min" /> / <input placeholder="Max" type="number" name="max_selections"/></p>
                 <ul id="options-user" class="options-container">
                   <li>
@@ -173,14 +173,23 @@ $OUTPUT->footerStart();
             addGroupBtn.click();
             currentGroups++;
           }
-          else console.log('no need to add');
           var item = $('form ul li.inputs')[i];
           if (!item) return;
           item.querySelector('input[name="id[]"]').value = (group.id);
           item.querySelector('input[name="group[]"]').value = (group.name);
           item.querySelector('input[name="occupancy[]"]').value = (group.occupancy);
         });
-      }
+
+       if (state.hasOwnProperty('constraints')) {
+         $('input[name=min_selections]').val(state.constraints.min || '');
+       }
+       if (state.hasOwnProperty('constraints')) {
+         $('input[name=max_selections]').val(state.constraints.max || '');
+       }
+       if (state.hasOwnProperty('expiry')) {
+         $('input[name=expiry_date]').val(moment(state.expiry).format() || '');
+       }
+     }
     </script>
 
 
