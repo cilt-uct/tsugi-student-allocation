@@ -18,6 +18,17 @@ Pre-Requisites
 
 * Tsugi
 
+Dependencies
+------------
+* perl
+
+To install the perl module List::MoreUtils (may need to run this as root with sudo):
+
+```
+cpan
+install List::MoreUtils
+```
+
 Sample text files for input to studentProjectAllocation
 =======================================================
 
