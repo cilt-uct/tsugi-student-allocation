@@ -29,12 +29,20 @@ $OUTPUT->flashMessages();
 if ( $USER->instructor ) {
     echo('<a href="configure.php">Configure</a>'."\n");
     echo('<a href="roomsetup.php">Administrate</a>'."\n");
+?>
+<form method="GET" action="perl.php" target="iframe-frame">
+    <input type="hidden" name="link_id" value="<?= $LINK->id ?>">
+    <input type="submit" value="Run Perl"
+        onclick="showModalIframe(this.title, 'iframe-dialog', 'iframe-frame', _TSUGI.spinnerUrl, true);" >
+    </form>
+<?php
 }
 //var_dump($user_json);
 
 $selection = json_decode($user_json);
 if (json_last_error() <> JSON_ERROR_NONE) {
     print "error";
+    $user_json = '{"result": {},"selection": []}';
 }
 
 
@@ -62,6 +70,10 @@ $date_now = new DateTime();
 $date_expiry = new DateTime($settings->{'expiry'});
 $date_left = $date_expiry->getTimestamp() - $date_now->getTimestamp();
 ?>
+<div id="iframe-dialog" title="Read Only Dialog" style="display: none;">
+   <iframe name="iframe-frame" style="height:400px" id="iframe-frame"
+    src="<?= $OUTPUT->getSpinnerUrl() ?>"></iframe>
+</div>
     <div id="application">
 
         <div class="row">
@@ -144,8 +156,6 @@ $OUTPUT->footerStart();
 	<!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="js/jquery.min.js"></script>
-    <script src="js/bootstrap.min.js"></script>
 	<script src="js/tmpl.min.js"></script>
     <script src="js/Sortable.min.js"></script>
     <script src="js/moment.min.js"></script>
@@ -439,6 +449,5 @@ $OUTPUT->footerStart();
     </script>
 <?php
 $OUTPUT->footerEnd();
-
 
 
