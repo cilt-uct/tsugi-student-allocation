@@ -14,7 +14,7 @@ if (!$USER->instructor) {
   header('Location: index.php');
 }
 
-$json = Settings::linkGet('json');
+$json = json_encode(Settings::linkGet('json'));
 
 // View
 $OUTPUT->header();
@@ -39,24 +39,25 @@ $OUTPUT->flashMessages();
             <form method="post" action="" class="col-xs-7">
                 <hr/>
                 <button type="button" class="btn btn-success"><a href="index.php" style="color: inherit;">Back to Selections</a></button>
-                <span style="display: block; margin-top: 0.5rem">Expiry: <input type="datetime-local" name="expiry_date" /></span>
+                <p style="display: block; margin-top: 0.5rem">Expiry: <input type="datetime-local" name="expiry_date" /></p>
+                <p>Max # selections: <input type="number" name="max_selections"/></p>
                 <ul id="options-user" class="options-container">
                   <li>
                     <span style="display: inline-block; width: 5rem;">ID</span>
                     <span style="display: inline-block; width: calc(100% - 13rem); text-align: center;">Group Name</span>
                     <span style="display: inline-block; width: 6rem; float: right; padding-right: 0.5rem;"># Users</span>
                   </li>
-                  <li>
+                  <li class="inputs">
                     <input type="text" name="id[]" />
                     <input type="text" name="group[]" />
                     <input type="number" name="occupancy[]" />
                   </li>
-                  <li>
+                  <li class="inputs">
                     <input type="text" name="id[]" />
                     <input type="text" name="group[]" />
                     <input type="number" name="occupancy[]" />
                   </li>
-                  <li>
+                  <li class="inputs">
                     <input type="text" name="id[]" />
                     <input type="text" name="group[]" />
                     <input type="number" name="occupancy[]" />
@@ -71,7 +72,7 @@ $OUTPUT->flashMessages();
 
     </div>
 <?php
-if(strlen($json) < 1 ) {
+if(!$json) {
     echo("<p>Not yet configured</p>\n");
 } else {
 ?>
@@ -88,6 +89,7 @@ $OUTPUT->footerStart();
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="js/tmpl.min.js"></script>
     <script type="text/javascript">
+      var state = JSON.parse('<?= $json ?>');
       $('form').on('submit', function(e) {
         var json = [];
         e.preventDefault();
@@ -124,6 +126,10 @@ $OUTPUT->footerStart();
         if (expiry) {
           posts.expiry = expiry;
         }
+        var maxSelections = $('input[name=max_selections]').val();
+        if (maxSelections) {
+          posts.constraints = {max: maxSelections};
+        }
         $.ajax({
           url: '<?= addSession("addgroups.php"); ?>',
           type: 'POST',
@@ -145,6 +151,23 @@ $OUTPUT->footerStart();
         $('form ul')[0].insertBefore($newInput[0], $('form ul')[0].querySelector('li:last-child'));
         setTimeout(function() {$newInput.removeClass('added');}, 0);
       });
+
+      if (state.hasOwnProperty('groups') && state.groups.length > 0) {
+        var currentGroups = $('form ul li').length;
+        var addGroupBtn = $('#addAnother')[0];
+        console.log(addGroupBtn);
+        state.groups.forEach(function(group, i) {
+          if (currentGroups <= i) {
+            addGroupBtn.click();
+            currentGroups++;
+          }
+          var item = $('form ul li.inputs')[i];
+          if (!item) return;
+          item.querySelector('input[name="id[]"]').value = (group.id);
+          item.querySelector('input[name="group[]"]').value = (group.name);
+          item.querySelector('input[name="occupancy[]"]').value = (group.occupancy);
+        });
+      }
     </script>
 
 
