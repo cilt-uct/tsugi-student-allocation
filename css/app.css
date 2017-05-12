@@ -64,8 +64,8 @@ ul.nav li {
     margin-top: -8px;
 }
 
-#application .options-container > div a:hover, 
-#application .options-container > div a:active {
+a.glyphicon:hover, 
+a.glyphicon:active {
     text-decoration: none;
 }
 
