@@ -10,6 +10,10 @@ $LAUNCH = LTIX::requireData();
 
 $p = $CFG->dbprefix;
 
+if (!$USER->instructor) {
+  header('Location: index.php');
+}
+
 $json = Settings::linkGet('json');
 
 // View
@@ -34,7 +38,8 @@ $OUTPUT->flashMessages();
         <div class="row">
             <form method="post" action="" class="col-xs-7">
                 <hr/>
-                <span>Expiry: <input type="datetime-local" name="expiry_date" /></span>
+                <button type="button" class="btn btn-success"><a href="index.php" style="color: inherit;">Back to Selections</a></button>
+                <span style="display: block; margin-top: 0.5rem">Expiry: <input type="datetime-local" name="expiry_date" /></span>
                 <ul id="options-user" class="options-container">
                   <li>
                     <span style="display: inline-block; width: 5rem;">ID</span>
@@ -122,9 +127,9 @@ $OUTPUT->footerStart();
         $.ajax({
           url: '<?= addSession("addgroups.php"); ?>',
           type: 'POST',
-          data: JSON.stringify({entries: posts})
+          data: {entries: posts}
         }).done(function(res) {
-          console.log(res);
+          window.location.href = "<?= addSession('index.php'); ?>";
         }).fail(function(err) {
           console.log(err);
         }).always(function() {
