@@ -133,13 +133,15 @@ $OUTPUT->footerStart();
           posts.expiry = moment(expiry).utc().toString();
         }
         var maxSelections = $('input[name=max_selections]').val();
+        var constraints ={};
         if (maxSelections) {
-          posts.constraints = {max: maxSelections};
+          constraints.max = maxSelections;
         }
         var minSelections = $('input[name=min_selections]').val();
         if (minSelections) {
-          posts.constraints = {max: minSelections};
+          constraints.min = minSelections;
         }
+        posts.constraints = constraints;
         $.ajax({
           url: '<?= addSession("addgroups.php"); ?>',
           type: 'POST',
