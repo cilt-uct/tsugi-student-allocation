@@ -120,11 +120,13 @@ $OUTPUT->footerStart();
           posts.expiry = expiry;
         }
         $.ajax({
-          url: 'addgroups.php',
+          url: '<?= addSection("addgroups.php"); ?>',
           type: 'POST',
           data: JSON.stringify({entries: posts})
         }).done(function(res) {
+          console.log(res);
         }).fail(function(err) {
+          console.log(err);
         }).always(function() {
         });
       });

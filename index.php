@@ -28,6 +28,7 @@ $OUTPUT->topNav();
 $OUTPUT->flashMessages();
 if ( $USER->instructor ) {
     echo('<a href="configure.php">Configure</a>'."\n");
+    echo('<a href="roomsetup.php">Administrate</a>'."\n");
 }
 //var_dump($user_json);
 
