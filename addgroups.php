@@ -25,6 +25,9 @@ if (!isset($_POST['entries'])) {
   exit();
 }
 
+$entries = $_POST['entries'];
+$entries['active'] = true;
+
 //$input = json_decode($_POST['entries'], true);
 //check the input?
 //$insertStmt = "INSERT INTO {$CFG->prefix}lti_context (json) values (:json)";
@@ -33,7 +36,7 @@ if (!isset($_POST['entries'])) {
 //  array('json' => $_POST['entries'])
 //);
 
-Settings::linkSet('json', $_POST['entries']);
+Settings::linkSet('json', $active);
 
 var_dump(Settings::linkGet('json'));
 
