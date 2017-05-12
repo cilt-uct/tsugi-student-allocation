@@ -30,8 +30,8 @@ my $distributeUnassigned = 1;
 
 # Define file names for input 
 my $studentsFN   = $ARGV[0];
-my $projectsFN   = $ARGV[2];
-my $lecturersFN  = $ARGV[1];
+my $projectsFN   = $ARGV[1];
+my $lecturersFN  = $ARGV[2];
 
 # Define file name for output 
 # These files will be overwritten! 
