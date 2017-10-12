@@ -10,7 +10,7 @@ $LAUNCH = LTIX::requireData();
 
 $p = $CFG->dbprefix;
 
-$json = Settings::linkGet('json'); // LTI_LINK JSON > contains the course settings
+$course_settings = Settings::linkGet('json'); // LTI_LINK JSON > contains the course settings
 
 //$RESULT->setJSON("[]");
 $user_json = $RESULT->getJSON();  // Saved Student Data
@@ -20,8 +20,10 @@ if(strlen($user_json) < 10 ) {
 
 // View
 $OUTPUT->header();
+
+$css = $CFG->getCurrentFileUrl('css/app.css');
 ?>
-    <link rel="stylesheet" type="text/css" href="css/app.css"/>
+    <link rel="stylesheet" type="text/css" href="<?= $css ?>"/>
 <?php
 $OUTPUT->bodyStart();
 $OUTPUT->topNav();
@@ -56,7 +58,8 @@ if (isset($selection->{'result'}->{'name'})) {
     $assigned_name = $selection->{'result'}->{'name'};
 }
 
-$settings = Settings::linkGet('json');
+
+
 $date_now = new DateTime();
 $date_expiry = new DateTime();
 if (isset($settings['expiry'])) {
@@ -65,7 +68,7 @@ if (isset($settings['expiry'])) {
 
 $date_left = $date_expiry->getTimestamp() - $date_now->getTimestamp();
 
-$json = json_encode($settings);
+$json = json_encode($course_settings);
 if (json_last_error() <> JSON_ERROR_NONE) {
     print "error<br/>";
     print json_last_error_msg() . "<br>";
@@ -73,6 +76,19 @@ if (json_last_error() <> JSON_ERROR_NONE) {
     $json = '{ "expiry": "'. date("Y-m-d") .'T06:00:00Z","constraints": { "max": -1}, groups: []}';
     $date_left = -1;
 }
+
+
+$loader = new Twig_Loader_Filesystem(realpath('templates'));
+$twig = new Twig_Environment($loader); //, array( 'cache' => realpath('_cache')));
+
+echo $twig->render('instructor.twig', array('name' => 'first'));
+
+$loader = new Twig_Loader_Array(array(
+    'index' => 'Hello {{ name }}!',
+));
+$twig = new Twig_Environment($loader);
+
+echo $twig->render('index', array('name' => 'Fabien'));
 
 /*
 print "<br/>";
@@ -172,11 +188,14 @@ $OUTPUT->footerStart();
 	<!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-	<script src="js/tmpl.min.js"></script>
-    <script src="js/Sortable.min.js"></script>
-    <script src="js/moment.min.js"></script>
-    <script src="js/Chart.bundle.min.js"></script>
-    <script src="js/app.js"></script>
+
+<?php
+    $include_files = array("js/Sortable.min.js", "js/moment.min.js", "js/Chart.bundle.min.js", "js/app.js"); 
+
+    foreach ($include_files as $file) {
+        echo "\t<script src='". $CFG->getCurrentFileUrl($file) ."'></script>\n";
+    }
+?>
     <script type="text/javascript">    
         
         var raw = <?= $json ?>,
@@ -370,8 +389,6 @@ $OUTPUT->footerStart();
 
 <?php
 if ( $USER->instructor ) {
-
-    $course_settings = Settings::linkGet('json'); // LTI_LINK JSON > contains the course settings
 
     $projects = array();
     $groups = $course_settings['groups'];

@@ -1,0 +1,5 @@
+Hello {{ name }} - - 
+
+{ % include ajax ? 'ajax.html' : 'not_ajax.html' % }
+
+{{ source('instructor_tmpl.html') }}
