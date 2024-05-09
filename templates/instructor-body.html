@@ -1,0 +1,228 @@
+<section>
+    <!-- Lecturer View -->
+    <div id="lecturer-view" class="container">
+        <ul class="nav nav-tabs">
+            <li class="active"><a data-toggle="tab" href="#overview-tab">Overview</a></li>
+            <li><a data-toggle="tab" href="#add-groups-tab">Add Options</a></li>
+            <li><a data-toggle="tab" href="#view-choices-tab">View Choices</a></li>
+            <li><a data-toggle="tab" href="#view-memberships-tab">View Memberships</a></li>
+        </ul>
+      
+        <div class="tab-content">
+            <div id="overview-tab" class="tab-pane fade in active">
+                <br/><h3>OVERVIEW</h3>
+                <hr/>
+                <form class="form-inline mb-3">
+                    <div class="form-group mr-2">
+                        <label for="search-project" class="mr-2">Search Project:</label>
+                        <input type="text" class="form-control search-input" placeholder="Enter Project Title or ID">
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-xs btn-search">
+                        <span class="glyphicon glyphicon-search"></span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-xs clear-search">
+                        <span class="glyphicon glyphicon-remove"></span>
+                    </button>
+                </form>
+                <br/>
+
+                <table class="table" id="tblOverview">
+                    <thead class="bg-info">
+                        <tr>
+                            <th>Title</th>
+                            <th>Current Size</th>
+                            <th>Avail</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <div id="add-groups-tab" class="tab-pane fade">
+                <br/><h3>ADD OPTIONS</h3>
+                <hr/>
+                <blockquote class="bg-info">
+                    <p>Configure the selection tool by filling in the information below.</p><br/>
+                    <p><u><b>NOTE:</b></u> All fields marked with <span class="text-danger"><b>*</b></span> are required!</p>
+                </blockquote>
+               
+                <form id="frmAddGroups" class="form-horizontal">
+                    <div class="row">
+                        
+                        <table class="table borderless">
+                            <tr>
+                                <input type="hidden" class="form-control" id="tool-id" name="tool-id" value="{{$toolid}}"/>
+                                <input type="hidden" id="tool-state" name="tool-state" value=""/>
+                                <th><span class="text-danger"><b>*</b></span> Tool Name:</th>
+                                <td><input type="text" class="form-control" id="tool-name" name="tool-name" required /></td>
+                            </tr>
+                            <tr>
+                                <th><span class="text-danger"><b>*</b></span> Instructions:</th>
+                                <td><textarea class="form-control" id="instructions" name="instructions" required></textarea></td>
+                            </tr>
+                            <tr>
+                                <th>Project Info:</th>
+                                <td><input type="text" class="form-control" id="groups-doc" name="groups-doc"></td>
+                            </tr>                           
+                            <tr>
+                                <th><span class="text-danger"><b>*</b></span> # Selections:</th>
+                                <td class="form-inline">
+                                    <input type="number" name="min-selections" id="min-selections" class="form-control input-sm" placeholder="Min" min="1" required/>
+                                    <span class="input-group-text">/</span>
+                                    <input type="number" name="max-selections" id="max-selections" class="form-control input-sm" placeholder="Max" min="1" required/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><span class="text-danger"><b>*</b></span> Release Date:</th>
+                                <td><input type="date" class="form-control" id="release-date" name="release-date" required min="<?= date('Y-m-d') ?>"></td>
+                            </tr>
+                            <tr>
+                                <th><span class="text-danger"><b>*</b></span> Closing Date:</th>
+                                <td><input type="date" class="form-control" id="closing-date" name="closing-date" required min="<?= date('Y-m-d') ?>"></td>
+                            </tr>
+                           
+                        </table>
+                    </div>
+                    <br/><br/>
+                    <h3>Options List</h3>
+                    <table class="table table-bordered" id="tblGroupsList">
+                        <thead class="bg-info">
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th># Users</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <input type="hidden" class="form-control form-control-xs" id="group-id[]" name="group-id[]" value="001" readonly/>
+                                    <span id="group-id" name="group-id" data-id="">001</span>
+                                </td>
+                                <td><input type="text" class="form-control form-control-xs" id="group-title[]" name="group-title[]" /></td>
+                                <td class="align-center"><input type="number" class="form-control" name="group-size[]" id="group-size[]"></td>
+                                <td class="text-center"><a href="#" class="glyphicon glyphicon-remove text-danger"></a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button type="button" id="add-row" name="add-row" class="btn btn-primary">+ Add Another</button>
+                
+                    <div class="form-group">        
+                        <div class="col-sm-offset-9 col-sm-3 pull-right">
+                          <button type="submit" class="btn btn-success pull-right" id="save-btn">Save</button> 
+                          <button type="button" class="btn btn-default pull-right" id="cancel-btn">Cancel</button>  
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div id="view-choices-tab" class="tab-pane fade">
+                <br/><h3>VIEW CHOICES</h3>
+                <hr/>
+                <form class="form-inline mb-3">
+                    <div class="form-group mr-2">
+                        <label for="search-student" class="mr-2">Search Student:</label>
+                        <input type="text" class="form-control search-input" placeholder="Enter Student ID or Name">
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-xs btn-search">
+                        <span class="glyphicon glyphicon-search"></span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-xs clear-search">
+                        <span class="glyphicon glyphicon-remove"></span>
+                    </button>
+                </form>
+                <!-- <form id="frmAllocation"> -->
+                    <button type = "button" id="run_allocation" name="run_allocation" class="btn btn-primary pull-right">Run Allocation</button>
+                <!-- </form> -->
+                <br/><br/>
+                <table class="table table-bordered" id="tbl-allocation-choices">
+                    <thead class="bg-info">
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            <th>Project Choices</th>
+                            <th>Allocated to</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+                <div class="modal fade" id="assignModal" tabindex="-1" role="dialog" aria-labelledby="assignModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="assignModalLabel">Assign Student to Group</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                          </button>
+                        </div>
+                        <div class="modal-body">
+                          <form id="assignForm">
+                            <p>Student ID: <span id="studentIdDisplay"></span></p> <!-- Display the student ID here -->
+                            <input type="hidden" id="studentId" name="studentId"> <!-- Hidden input field to store the student ID -->
+                            <div class="form-group">
+                              <label for="groupId">Select Group:</label>
+                              <select class="form-control" id="groupId" name="groupId">
+                                <!-- Populate this with the list of groups -->
+                                <option value="group1">Group 1</option>
+                                <option value="group2">Group 2</option>
+                                <option value="group3">Group 3</option>
+                                <!-- Add more options as needed -->
+                              </select>
+                            </div>
+                            <input type="hidden" id="studentId" name="studentId">
+                          </form>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                          <button type="button" class="btn btn-primary" id="assignButton">Assign</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+            </div>
+            <div id="view-memberships-tab" class="tab-pane fade">
+                <br/><h3>VIEW MEMBERSHIPS</h3>
+                <hr/>
+                <!-- <blockquote class="bg-default">
+                    <p>Click on a student's name to edit their project memberships</p>
+                </blockquote> 
+                <br/><br/>-->
+
+                <div class="row">
+                    <div class="col-md-6 col-sm-6">
+                        <form class="form-inline" id="frm_searchMemberships">
+                            <div class="form-group mr-2">
+                                <label for="search_member" class="mr-2">Search Student:</label>
+                                <input type="text" class="form-control search-input" placeholder="Student Name or ID">
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-xs btn-search">
+                                <span class="glyphicon glyphicon-search"></span>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-xs clear-search">
+                                <span class="glyphicon glyphicon-remove"></span>
+                            </button>
+                        </form>        
+                    </div>
+                    <div class="col-md-6 col-sm-6">
+                        <button type="button" class="btn btn-primary btn-sm pull-right" id="btnDownloadMemberships">
+                            <span class="glyphicon glyphicon-download"></span> Download
+                        </button>
+                    </div>
+                </div>
+                <br/>
+                <!-- <p class="pull-right">Viewing <span>[n]</span> of <span>[n]</span> students</p> -->
+                <table class="table" id="tbl-user-memberships">
+                    <thead class="bg-info">
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            <th>Project</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+</section>

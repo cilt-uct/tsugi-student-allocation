@@ -1,0 +1,331 @@
+{% foreach($scripts as $script): %}
+    <script src="{{$script}}" type="text/javascript"></script>
+{% endforeach; %}
+
+<script type="text/javascript">    
+    $(document).ready(function(){
+        var _settings = JSON.parse('{{ $allocationsettings }}');
+        var _groups = JSON.parse('{{ $allocationgroups }}');
+        var _choices = JSON.parse('{{ $studentchoices }}');
+        var groupedChoices = {};
+        var assignedChoices = {};
+
+        if(_settings.length > 0 || _groups.length > 0 || _choices.length > 0) {
+            populateOverview(_groups, _choices);
+
+            $('#tblGroupsList tbody').empty();
+            populateSettings(_settings);
+            populateGroups(_groups);
+            populateUserChoices(_choices);
+        }
+       
+        $('#add-row').click(function(event) {
+            event.preventDefault();
+            addRow({ id: '', group_name: '', size: '' });
+        });
+
+        $(document).on('click', '#tblGroupsList tbody .delete-row', function(event) {
+            event.preventDefault();
+            $(this).closest('tr').remove();
+        });
+
+        $('#frmAddGroups').submit(function(event) {
+            event.preventDefault();
+            var formData = new FormData(this);
+
+            // Check if any row input fields are empty
+            var emptyRows = false;
+            $('#tblGroupsList tbody tr').each(function() {
+                var groupId = $(this).find('input[name="group-title[]"]').val().trim();
+                var groupSize = $(this).find('input[name="group-size[]"]').val().trim();
+                
+                // If either group title or group size is empty, mark the row as empty
+                if (groupId === '' || groupSize === '') {
+                    emptyRows = true;
+                    return false;
+                }
+            });
+
+            if (emptyRows) {
+                alert('Please fill in all fields for each group before submitting.');
+                return false; 
+            } else {
+                $.ajax({
+                    url: '{{ $configure }}',
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        location.reload();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(JSON.parse(xhr.responseText).error);
+                    }
+                });
+            }
+           
+        });
+
+        $('#frmAddGroups #cancel-btn').click(function(event) {
+            event.preventDefault();
+            $('#frmAddGroups')[0].reset();
+            $('#tblGroupsList tbody').empty();
+            populateSettings(_settings);
+            populateGroups(_groups);
+        });
+
+        $('#run_allocation').click(function(event) {
+            event.preventDefault();
+
+            $.ajax({
+                url: '{{ $allocate }}',
+                type: 'GET',
+                contentType: 'json',
+                success: function(response) {
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error(JSON.parse(xhr.responseText).error);
+                }
+            });
+        })
+
+        $('.btn-search').click(function() {
+            var $searchForm = $(this).closest('form');
+            var searchText = $searchForm.find('.search-input').val().trim().toLowerCase();
+            if (searchText === '') {
+                $searchForm.closest('.tab-pane').find('.table tbody tr').show();
+            } else {
+                $searchForm.closest('.tab-pane').find('.table tbody tr').hide().filter(function() {
+                    var $tds = $(this).find('td:nth-child(-n+2)');
+                    var found = false;
+                    $tds.each(function() {
+                        if ($(this).text().toLowerCase().indexOf(searchText) > -1) {
+                            found = true;
+                            return false;
+                        }
+                    });
+                    return found;
+                }).show();
+            }
+        });
+
+        $('.clear-search').click(function(event) {
+            event.preventDefault();
+            var $searchForm = $(this).closest('form');
+            $searchForm.find('.search-input').val('');
+            $searchForm.closest('.tab-pane').find('.table tbody tr').show();
+        });
+
+        $('#btnDownloadMemberships').click(function(event) {
+            event.preventDefault();
+            var csvData = '';
+            var headers = $('#tbl-user-memberships thead th');
+
+            headers.each(function(index) {
+                if (index > 0) {
+                    csvData += ',';
+                }
+                csvData += $(this).text();
+            });
+
+            csvData += '\n';
+
+            var rows = $('#tbl-user-memberships tbody tr');
+
+            rows.each(function(rowIndex) {
+                var cells = $(this).find('td');
+
+                // Loop through each cell and append its text to CSV data
+                cells.each(function(cellIndex) {
+                    if (cellIndex > 0) {
+                        csvData += ',';
+                    }
+                    csvData += $(this).text();
+                });
+
+                if (rowIndex < rows.length - 1) {
+                    csvData += '\n';
+                }
+            });
+
+            var blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' });
+            var link = document.createElement('a');
+
+            link.href = window.URL.createObjectURL(blob);
+            link.download = 'table_data.csv';
+
+            document.body.appendChild(link);
+            link.click();
+
+            document.body.removeChild(link);
+        });
+
+        $('#assignModal').on('show.bs.modal', function(event) {
+        
+            var button = $(event.relatedTarget); 
+            var studentId = button.data('id');
+            var modal = $(this);
+            
+            $('#studentId').val(studentId);
+            $('#studentIdDisplay').text(studentId);
+        });
+
+        function populateOverview(allocation_groups, student_choices) {
+            var groupAvailSpaces = {};
+            allocation_groups.forEach(function(group) {
+                groupAvailSpaces[group.group_id] = group.group_size;
+           
+                // Update avail_spaces based on assigned choices
+                student_choices.forEach(function(choice) {
+                    if (choice.assigned === '1' && choice.group_id === group.group_id) {
+                        groupAvailSpaces[group.group_id]--;
+                    }
+                });
+
+                var avail_spaces = groupAvailSpaces[group.group_id];
+                var row = '<tr>' +
+                            '<td>' + group.group_id + ': ' + group.group_name + '</td>' + 
+                            '<td class="text-center">' + group.group_size + '</td>' +
+                            '<td class="text-center">' + avail_spaces + '</td>' +
+                        '</tr>';
+
+                $('#tblOverview tbody').append(row);
+            })
+        }
+
+        function populateSettings(allocation_settings) {
+            if (allocation_settings.length > 0) {
+                var settings = _settings[0];
+
+                $('#tool-id').val(settings.link_id);
+                $('#tool-name').val(settings.name);
+                $('#instructions').val(settings.instructions);
+                $('#release-date').val(settings.release_date.split(' ')[0]);
+                $('#closing-date').val(settings.closing_date.split(' ')[0]);
+                $('#groups-doc').val(settings.groups_doc);
+                $('#min-selections').val(settings.min_selections);
+                $('#max-selections').val(settings.max_selections);
+            }
+        }
+
+        function populateGroups(allocation_groups) {
+            allocation_groups.forEach(function(group) {
+                var _group = '<tr>' +
+                                '<td>' +
+                                    '<input type="hidden" class="form-control" name="group-id[]" id="group-id[]" value="' + group.group_id + '" readonly>' + 
+                                    '<span id="group-id" name="group-id" data-id="' + group.group_id + '">' + group.group_id + '</span>' +
+                                '</td>' +
+                                '<td>' +
+                                    '<input type="text" class="form-control" name="group-title[]" id="group-title[]" value="' + group.group_name + '">' + 
+                                '</td>' +
+                                '<td><input type="number" class="form-control" name="group-size[]" id="group-size[]" min="1" value="' + group.group_size + '"></td>' +
+                                '<td class="text-center"><a href="#" class="glyphicon glyphicon-remove text-danger delete-row"></a></td>' +
+                            '</tr>';
+                $('#tblGroupsList tbody').append(_group);
+            });
+        }
+
+        function addRow(group) {
+            var projectId = $('#tblGroupsList tbody tr').length + 1;
+            projectId = ("000" + projectId).slice(-3);
+
+            var newRow = '<tr>' +
+                            '<td>' +
+                                '<input type="hidden" class="form-control" name="group-id[]" id="group-id[]" value="' + projectId + '" readonly>' + 
+                                '<span id="group-id" name="group-id" data-id="' + projectId + '">' + projectId + '</span>' +
+                            '</td>' +
+                            '<td>' +
+                                '<input type="text" class="form-control" name="group-title[]" id="group-title[]" value="">' + 
+                            '</td>' +
+                            '<td><input type="number" class="form-control" name="group-size[]" id="group-size[]" value="" min="1"></td>' +
+                            '<td class="text-center"><a href="#" class="glyphicon glyphicon-remove text-danger delete-row"></a></td>' +
+                        '</tr>';
+            $('#tblGroupsList tbody').append(newRow);
+        }
+
+        function validateForm() {
+            var isValid = true;
+            $('#tblGroupsList tbody tr').each(function() {
+                var groupId = $(this).find('.group-id').val();
+                var groupName = $(this).find('.group-title').val();
+                var groupSize = $(this).find('.group-size').val();
+                if (groupId === '' && groupName === '' && groupSize === '') {
+                    $(this).remove();
+                } else if (groupName === '' || groupSize === '') {
+                    isValid = false;
+                    alert('Please fill in all fields.');
+                    return false;
+                }
+            });
+            return isValid;
+        }
+
+        function populateUserChoices(user_choices) {
+            user_choices.forEach(function(project) {
+                var userId = project.user_id;
+                var userName = project.user_name;
+                var groupId = project.group_id;
+                var choiceId = project.choice_id;
+                var assigned = project.assigned;
+                var allocatedGroup = project.group_id + ": " + project.group_name;
+                if (!groupedChoices[userId]) {
+                    groupedChoices[userId] = [];
+                }
+                
+                groupedChoices[userId].push({ groupId: groupId, choiceId: choiceId, userName: userName });
+
+                if (assigned === "1") {
+                    assignedChoices[userId] = groupId;
+                    var row = '<tr>' +
+                        '<td>' + userId + '</td>' +
+                        '<td>' + userName + '</td>' +
+                        '<td>' + allocatedGroup + '</td>' +
+                        '</tr>';
+                    
+                    $('#tbl-user-memberships tbody').append(row);
+                }
+            });
+
+            for (var userId in groupedChoices) {
+                var userName = groupedChoices[userId][0].userName;
+                var userChoices = groupedChoices[userId]
+                    .sort((a, b) => a.choiceId - b.choiceId) // Sort choices by choice_id
+                    .map(function(choice) {
+                        return choice.groupId;
+                    })
+                    .join(', ');
+                var allocatedChoice = assignedChoices[userId] || "Not Assigned";
+                var assignLink = allocatedChoice === "Not Assigned" ? 
+                        '<a href="#" class="assign-link" data-toggle="modal" data-target="#assignModal" data-id="'+ userId + '">' + 
+                            '<i class="fas fa-user-plus"></i> Assign</a>' : '';
+                var row = '<tr>' +
+                    '<td>' + userId + '</td>' +
+                    '<td>' + userName + '</td>' +
+                    '<td>' + userChoices + '</td>' +
+                    '<td>' + allocatedChoice + '</td>' +
+                    '<td>' + assignLink  + '</td>' +
+                    '</tr>';
+                $('#tbl-allocation-choices tbody').append(row);
+            }
+        }
+
+        function setState(state) {
+
+            $.ajax({
+                url: '{{ $updatestate }}',
+                type: 'POST',
+                data: JSON.stringify({"tool-state": state}),
+                contentType: 'json',
+                success: function(response) {
+                    // To do
+                },
+                error: function(xhr, status, error) {
+                    console.error(JSON.parse(xhr.responseText).error);
+                }
+            });
+        }
+    });
+
+</script>

@@ -1,0 +1,128 @@
+{% foreach($scripts as $script): %}
+    <script src="{{$script}}" type="text/javascript"></script>
+{% endforeach; %}
+
+<script type="text/javascript">  
+    var selectedChoices = [];
+
+    $(document).ready(function(){
+        var _settings = JSON.parse('{{$allocationdetails}}');
+        var _options = JSON.parse('{{$allocationgroups}}');
+        var _choices = JSON.parse('{{$selectedgroups}}');
+        var projectsContainer = $('#projects-container');
+
+        if(_settings.length > 0 || _options.length > 0 || _choices.length > 0) {
+            var details = _settings[0];
+
+            populateAllocationDetails(details, _options, _choices);
+
+            $('#tool-placeholder').hide();
+            $('#tool-details').show();
+        } else {
+            $('#tool-placeholder').show();
+            $('#tool-details').hide();
+        }
+
+        $('#submit-selection').click(function() {
+            var selectedProjects = [];
+            var selectedCount = $('.project-selection').filter(function() {
+                return $(this).val() !== '';
+            }).length;
+
+            if (selectedCount < details.min_selections) {
+                $('#error-message').html('<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Please select at least ' + details.min_selections + ' option(s) before submission.');
+                return; 
+            } 
+            else {
+                $('#error-message').html(''); 
+                $('#error-message').hide();
+            }
+
+
+            $('.project-selection').each(function() {
+                var project_id = $(this).val();
+                var project_level = $(this).closest('tr').find('td:eq(0)').text();
+                
+                selectedProjects.push({ id: project_id, level: project_level });
+            });
+
+            $.ajax({
+                url: '{{ $addchoices }}',
+                type: 'POST',
+                data: JSON.stringify({ selectedProjects: selectedProjects }),
+                contentType: 'application/json',
+                success: function(response) {
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error(error);
+                    $('#error-message').html('An error occurred while processing your request. Please try again later.');
+                    $('#error-message').show();
+                }
+            });
+        });
+    
+        $('.project-selection').change(function() {
+            updateChoices(this);
+        })
+
+    });
+    
+    function populateAllocationDetails(details, options, choices) {
+        var currentDate = new Date();
+        var formattedDate = currentDate.getFullYear() + '-' + ('0' + (currentDate.getMonth() + 1)).slice(-2) + '-' + ('0' + currentDate.getDate()).slice(-2);
+        var assignedGroup = choices.find(choice => choice.assigned === "1");
+        var closingDate = details.closing_date.split(' ')[0];
+        var blockquoteContent = '<p>Select <b>at least ' + details.min_selections + ' and up to ' + details.max_selections + ' choices</b> from the list below for the electronic selection process. If you fail to make selections, you\'ll be randomly allocated to a project. Make your choices in <b><span class="text-danger">order of preference</span></b>. The deadline for selections is <b>' + details.closing_date.split(' ')[0] + '</b>.</p>';
+        
+        if (assignedGroup) {
+            $('#assigned_to').text(assignedGroup.group_id + ' - ' + assignedGroup.group_name);
+            $('#assigned_div').show();
+        }
+
+        if (formattedDate > details.closing_date) {
+            $('.project-selection').prop('disabled', true);
+        }
+        
+        $('blockquote').html(blockquoteContent);
+
+        for (var i = 1; i <= details.max_selections; i++) {
+            var selectId = 'select_' + i;
+            var rowId = 'row_' + i;
+            
+            var row = '<tr>' +
+                        '<td class="text-center"><input type="hidden" id="choice-number[]" name="choice-number[]" value="' + i + '" />' + i + '</td>' +
+                        '<td>' +
+                            '<select class="form-control project-selection" data-id="' + selectId + '" name="project-selection" data-row="' + rowId + '">';
+
+            var choiceForLevel = choices.find(choice => choice.choice_id === i.toString());
+
+            row += '<option value="" selected>Select</option>';
+            options.forEach(function(group) {
+                var isSelected = choiceForLevel && choiceForLevel.group_id === group.group_id ? 'selected' : '';
+                row += '<option value="' + group.group_id + '" ' + isSelected + '>' + group.group_id + ': ' + group.group_name + '</option>';
+            });
+
+            row += '</select>' +
+                    '</td>' +
+                '</tr>';
+
+            $('#project-list').append(row);
+        }
+    }
+
+    function updateChoices(select) {
+        var selectedChoice = select.value;
+        var rowIndex = $(select).closest('tr').index();
+
+        $(select).closest('tbody').find('.project-selection').each(function() {
+            if (this !== select) {
+                var choice = $(this).val();
+                if (choice === selectedChoice) {
+                    $(this).val('');
+                }
+            }
+        });
+    }
+
+</script>

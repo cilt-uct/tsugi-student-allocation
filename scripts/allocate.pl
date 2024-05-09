@@ -3,8 +3,10 @@
 #use warnings;
 use Data::Dumper;
 use List::MoreUtils qw(firstidx uniq);
-use FindBin;
-use lib "$FindBin::Bin/../lib";
+# use FindBin;
+# use lib "$FindBin::Bin/../lib";
+use FindBin qw($RealBin);
+use lib $RealBin;
 use studentAllocation;
 use List::Util qw(shuffle);
 use Getopt::Long;
