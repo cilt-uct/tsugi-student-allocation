@@ -110,15 +110,15 @@ while(<LECTURERS>)
 }
 close LECTURERS;
 
-while(<PROJECTS>)
-{
-	chomp($_);
-	@_ = split( /\s+/, $_ );	
-	($key, $cap, $lect) = @_;
-	die ("Error: duplicate project found in $projectsFN: $key\n") if exists $projLect{ $key };
-	$projLect{ $key } = $lect;
-	$projCap{ $key } = $cap;
-	push( @{$lectProj{ $lect }}, $key );
+while (<PROJECTS>) {
+    chomp($_);
+    @_ = split( /\s+/, $_ );
+    ($key, $cap, $lect) = @_;
+
+    die ("Error: duplicate project found in $projectsFN: $key\n") if exists $projLect{ $key };
+    $projLect{ $key } = $lect;
+    $projCap{ $key } = $cap;
+    push( @{$lectProj{ $lect }}, $key );
 }
 close PROJECTS;
 # END read in files 
@@ -129,7 +129,7 @@ close PROJECTS;
 
 # Make sure projects preferred by the students all exist
 while (($key, $value) = each(%studPrefs)){
-	foreach( @{$value} ){	
+	foreach ( @{$value} ){ 
 		exists $projCap{ $_ } or die("Student $key preferred project $_ did not exist in project file."); 
 	}
 }
@@ -186,9 +186,6 @@ my $worst;
 my $worstProj;
 my $idx;
 my $maxIdx;
-
-
-
 
 # This is a direct implementation of the pseudocode in Fig. 2. There is probably a more
 # efficient way of doing it.
@@ -381,6 +378,3 @@ close OUTPUT;
 #print Dumper(\%lectProj);
 
 print("Done allocating students. Number of unallocated students: ".(scalar @unassignedStudents)."\n\n");
-
-
-

@@ -8,18 +8,50 @@
         var _groups = JSON.parse('{{ $allocationgroups }}');
         var _choices = JSON.parse('{{ $studentchoices }}');
         var groupedChoices = {};
-        var assignedChoices = {};
 
         if(_settings.length > 0 || _groups.length > 0 || _choices.length > 0) {
-            populateOverview(_groups, _choices);
+            var state = _settings[0].state;
+            var selections = [];
 
             $('#tblGroupsList tbody').empty();
             populateSettings(_settings);
-            populateGroups(_groups);
-            populateUserChoices(_choices);
+            _groups.forEach(function(group) {
+                var avail_spaces = group.group_size;
+                var num_students = 0;
+                _choices.forEach(function(choice) {
+                    if (choice.assigned === '1' && choice.group_id === group.group_id) {
+                        avail_spaces--;
+                        num_students++;
+                    }
+                });
+
+                group.avail_spaces = avail_spaces;
+                group.num_students = num_students;
+            });
+
+            $('#tblGroupsList tbody').html(tmpl('tmpl-options', _groups));
+
+            if (state === "waiting") {
+                $('#frmAddGroups, #tblGroupsList').find('input, select, textarea, button').prop('disabled', true);
+                $('#btnCancel, #btnSave, #btnAddRow, #run_allocation').hide();
+                $('#tblGroupsList .delete-row').hide();
+            } else {
+                $("#tblGroupsList tbody").sortable({
+                items: 'tr',
+                dropOnEmpty: false,
+                start: function (G, ui) {
+                    ui.item.addClass("select");
+                },
+                stop: function (G, ui) {
+                    ui.item.removeClass("select");
+                    updateGroupIds();
+                }
+            });
+            }
+            populateSelections(_choices);
         }
        
-        $('#add-row').click(function(event) {
+        $('#btnAddRow').click(function(event) {
             event.preventDefault();
             addRow({ id: '', group_name: '', size: '' });
         });
@@ -27,19 +59,18 @@
         $(document).on('click', '#tblGroupsList tbody .delete-row', function(event) {
             event.preventDefault();
             $(this).closest('tr').remove();
+            updateGroupIds();
         });
 
         $('#frmAddGroups').submit(function(event) {
             event.preventDefault();
             var formData = new FormData(this);
-
-            // Check if any row input fields are empty
             var emptyRows = false;
+
             $('#tblGroupsList tbody tr').each(function() {
                 var groupId = $(this).find('input[name="group-title[]"]').val().trim();
                 var groupSize = $(this).find('input[name="group-size[]"]').val().trim();
                 
-                // If either group title or group size is empty, mark the row as empty
                 if (groupId === '' || groupSize === '') {
                     emptyRows = true;
                     return false;
@@ -49,7 +80,8 @@
             if (emptyRows) {
                 alert('Please fill in all fields for each group before submitting.');
                 return false; 
-            } else {
+            } 
+            else {
                 $.ajax({
                     url: '{{ $configure }}',
                     type: 'POST',
@@ -67,7 +99,7 @@
            
         });
 
-        $('#frmAddGroups #cancel-btn').click(function(event) {
+        $('#frmAddGroups #btnCancel').click(function(event) {
             event.preventDefault();
             $('#frmAddGroups')[0].reset();
             $('#tblGroupsList tbody').empty();
@@ -79,11 +111,14 @@
             event.preventDefault();
 
             $.ajax({
-                url: '{{ $allocate }}',
-                type: 'GET',
-                contentType: 'json',
+                url: '{{ $updatestate }}',
+                type: 'POST',
+                data:JSON.stringify({ "tool-state": "waiting" }),
+                contentType: 'application/json',
                 success: function(response) {
                     location.reload();
+                    $("#run_allocation").hide();
+                    check_waiting_sites();
                 },
                 error: function(xhr, status, error) {
                     console.error(JSON.parse(xhr.responseText).error);
@@ -163,37 +198,44 @@
         });
 
         $('#assignModal').on('show.bs.modal', function(event) {
-        
             var button = $(event.relatedTarget); 
             var studentId = button.data('id');
             var modal = $(this);
-            
+            var availableGroups = _groups.filter(function(group) {
+                return group.avail_spaces > 0;
+            });
+
             $('#studentId').val(studentId);
             $('#studentIdDisplay').text(studentId);
+            $('#assignedGroup').empty();
+            $('#assignedGroup').append($('<option>', {value: '', text: 'Select from list'}));
+
+            availableGroups.forEach(function(group) {
+                $('#assignedGroup').append($('<option>', {
+                    value: group.group_id,
+                    text: group.group_id + ': ' + group.group_name
+                }));
+            });
         });
 
-        function populateOverview(allocation_groups, student_choices) {
-            var groupAvailSpaces = {};
-            allocation_groups.forEach(function(group) {
-                groupAvailSpaces[group.group_id] = group.group_size;
-           
-                // Update avail_spaces based on assigned choices
-                student_choices.forEach(function(choice) {
-                    if (choice.assigned === '1' && choice.group_id === group.group_id) {
-                        groupAvailSpaces[group.group_id]--;
-                    }
-                });
-
-                var avail_spaces = groupAvailSpaces[group.group_id];
-                var row = '<tr>' +
-                            '<td>' + group.group_id + ': ' + group.group_name + '</td>' + 
-                            '<td class="text-center">' + group.group_size + '</td>' +
-                            '<td class="text-center">' + avail_spaces + '</td>' +
-                        '</tr>';
-
-                $('#tblOverview tbody').append(row);
-            })
-        }
+        $('#frmAssign').submit(function(event) {
+            event.preventDefault();
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: '{{ $assign }}',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error(JSON.parse(xhr.responseText).error);
+                }
+            });
+        })
 
         function populateSettings(allocation_settings) {
             if (allocation_settings.length > 0) {
@@ -210,20 +252,11 @@
             }
         }
 
-        function populateGroups(allocation_groups) {
-            allocation_groups.forEach(function(group) {
-                var _group = '<tr>' +
-                                '<td>' +
-                                    '<input type="hidden" class="form-control" name="group-id[]" id="group-id[]" value="' + group.group_id + '" readonly>' + 
-                                    '<span id="group-id" name="group-id" data-id="' + group.group_id + '">' + group.group_id + '</span>' +
-                                '</td>' +
-                                '<td>' +
-                                    '<input type="text" class="form-control" name="group-title[]" id="group-title[]" value="' + group.group_name + '">' + 
-                                '</td>' +
-                                '<td><input type="number" class="form-control" name="group-size[]" id="group-size[]" min="1" value="' + group.group_size + '"></td>' +
-                                '<td class="text-center"><a href="#" class="glyphicon glyphicon-remove text-danger delete-row"></a></td>' +
-                            '</tr>';
-                $('#tblGroupsList tbody').append(_group);
+        function updateGroupIds() {
+            $('#tblGroupsList tbody tr').each(function(index) {
+                var newGroupId = ("000" + (index + 1)).slice(-3);
+                $(this).find('.group-id-cell span').text(newGroupId);
+                $(this).find('.group-id-cell input').val(newGroupId);
             });
         }
 
@@ -231,18 +264,10 @@
             var projectId = $('#tblGroupsList tbody tr').length + 1;
             projectId = ("000" + projectId).slice(-3);
 
-            var newRow = '<tr>' +
-                            '<td>' +
-                                '<input type="hidden" class="form-control" name="group-id[]" id="group-id[]" value="' + projectId + '" readonly>' + 
-                                '<span id="group-id" name="group-id" data-id="' + projectId + '">' + projectId + '</span>' +
-                            '</td>' +
-                            '<td>' +
-                                '<input type="text" class="form-control" name="group-title[]" id="group-title[]" value="">' + 
-                            '</td>' +
-                            '<td><input type="number" class="form-control" name="group-size[]" id="group-size[]" value="" min="1"></td>' +
-                            '<td class="text-center"><a href="#" class="glyphicon glyphicon-remove text-danger delete-row"></a></td>' +
-                        '</tr>';
-            $('#tblGroupsList tbody').append(newRow);
+            $('#tblGroupsList tbody').append(tmpl('tmpl-option-row', 
+                            {'group_id': projectId, 'group_name': '', 'group_size': 1}));
+
+            updateGroupIds();
         }
 
         function validateForm() {
@@ -262,52 +287,50 @@
             return isValid;
         }
 
-        function populateUserChoices(user_choices) {
+        function populateSelections(user_choices) {
             user_choices.forEach(function(project) {
                 var userId = project.user_id;
-                var userName = project.user_name;
                 var groupId = project.group_id;
-                var choiceId = project.choice_id;
+                var groupName = project.group_name;
                 var assigned = project.assigned;
-                var allocatedGroup = project.group_id + ": " + project.group_name;
+                var choiceId = project.choice_id;
+                var allocatedGroup = groupId + ": " + groupName;
+
                 if (!groupedChoices[userId]) {
-                    groupedChoices[userId] = [];
+                    groupedChoices[userId] = { user_id: userId, user_name: project.user_name, grouped_choices: [],
+                        allocated_to: assigned === "1" ? groupId : "Not assigned", allocated_group: assigned === "1" ? allocatedGroup : ""
+                    };
+                } else {
+                    if (groupedChoices[userId].allocated_to === "" && assigned === "1") {
+                        groupedChoices[userId].allocated_to = groupId;
+                        groupedChoices[userId].allocated_group = allocatedGroup;
+                    }
                 }
-                
-                groupedChoices[userId].push({ groupId: groupId, choiceId: choiceId, userName: userName });
+
+                groupedChoices[userId].grouped_choices.push({ group_id: groupId, choice_id: choiceId });
 
                 if (assigned === "1") {
-                    assignedChoices[userId] = groupId;
-                    var row = '<tr>' +
-                        '<td>' + userId + '</td>' +
-                        '<td>' + userName + '</td>' +
-                        '<td>' + allocatedGroup + '</td>' +
-                        '</tr>';
-                    
-                    $('#tbl-user-memberships tbody').append(row);
+                    groupedChoices[userId].allocated_to = groupId;
+                    groupedChoices[userId].allocated_group = allocatedGroup;
                 }
             });
 
             for (var userId in groupedChoices) {
-                var userName = groupedChoices[userId][0].userName;
-                var userChoices = groupedChoices[userId]
-                    .sort((a, b) => a.choiceId - b.choiceId) // Sort choices by choice_id
-                    .map(function(choice) {
-                        return choice.groupId;
-                    })
-                    .join(', ');
-                var allocatedChoice = assignedChoices[userId] || "Not Assigned";
-                var assignLink = allocatedChoice === "Not Assigned" ? 
-                        '<a href="#" class="assign-link" data-toggle="modal" data-target="#assignModal" data-id="'+ userId + '">' + 
-                            '<i class="fas fa-user-plus"></i> Assign</a>' : '';
-                var row = '<tr>' +
-                    '<td>' + userId + '</td>' +
-                    '<td>' + userName + '</td>' +
-                    '<td>' + userChoices + '</td>' +
-                    '<td>' + allocatedChoice + '</td>' +
-                    '<td>' + assignLink  + '</td>' +
-                    '</tr>';
-                $('#tbl-allocation-choices tbody').append(row);
+                groupedChoices[userId].grouped_choices = groupedChoices[userId].grouped_choices
+                    .sort((a, b) => a.choice_id - b.choice_id).map(choice => choice.group_id).join(', ');
+            }
+
+            var groupedChoicesArray = Object.values(groupedChoices);
+            $('#tbl-allocation-choices tbody').html(tmpl('tmpl-selections', groupedChoicesArray));
+            $('#tbl-user-memberships tbody').html(tmpl('tmpl-memberships', groupedChoicesArray));
+
+            var isNotAllocated = groupedChoicesArray.some(function(choice) {
+                return choice.allocated_to === "Not assigned";
+            });
+
+            if (!isNotAllocated) {
+                $('#run_allocation, #divSelections').hide();
+                $('#divMemberships').show();
             }
         }
 
@@ -319,13 +342,27 @@
                 data: JSON.stringify({"tool-state": state}),
                 contentType: 'json',
                 success: function(response) {
-                    // To do
                 },
                 error: function(xhr, status, error) {
                     console.error(JSON.parse(xhr.responseText).error);
                 }
             });
         }
+    
+        function allocateUsers() {
+            $.ajax({
+                url: '{{ $allocate }}',
+                type: 'GET',
+                contentType: 'json',
+                success: function(response) {
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error(JSON.parse(xhr.responseText).error);
+                }
+            });
+        }
+    
     });
 
 </script>

@@ -1,0 +1,48 @@
+<script type="text/x-tmpl" id="tmpl-settings">
+    {% var closingDate = o.closing_date.split(' ')[0];%}
+    <p>Select <b>at least {%=o.min_selections%} and up to {%=o.max_selections%} choices</b> from the list below for the electronic selection process. 
+    If you fail to make selections, you'll be randomly allocated to a project.
+    Make your choices in <b><span class="text-danger">order of preference</span></b>. The deadline for selections is <b>{%=closingDate%}</b>.</p>
+</script>
+<script type="text/x-tmpl" id="tmpl-assigned-to">
+    <br/><br/>
+    <h3>Assigned to: </h3>
+    <p>{%=o.group_id%} - {%=o.group_name%}</p>
+</script>
+<script type="text/x-tmpl" id="tmpl-option-row">
+    {% var assignedGroup = o.choices.find(choice => choice.assigned === "1"); %}
+    {% if (assignedGroup) { %}
+        {% o.choices.forEach(function(choice) { %}
+            <tr>
+                <td class="text-center">
+                    <input type="hidden" id="choice-number[]" name="choice-number[]" value="{%= choice.choice_id %}" />
+                    {%= choice.choice_id %}
+                </td>
+                <td>                       
+                    <p>{%= choice.group_id %} - {%= choice.group_name %}</p>
+                </td>
+            </tr>
+        {% }); %}
+    {% } else { %}
+        {% for (var i = 1; i <= o.details.max_selections; i++) { %}
+            {% var selectId = 'select_' + i; %}
+            {% var rowId = 'row_' + i; %}
+            <tr>
+                <td class="text-center">
+                    <input type="hidden" id="choice-number[]" name="choice-number[]" value="{%= i %}" />
+                    {%= i %}
+                </td>
+                <td>
+                    <select class="form-control project-selection" data-id="{%= selectId %}" name="project-selection[]" data-row="{%= rowId %}">
+                        <option value="">Select</option>
+                        {% o.options.forEach(function(group) { %}
+                            {% var choiceForLevel = o.choices.find(choice => choice.choice_id === i.toString()); %}
+                            {% var isSelected = choiceForLevel && choiceForLevel.group_id === group.group_id ? 'selected' : ''; %}
+                            <option value="{%= group.group_id %}" {%= isSelected %}>{%= group.group_id %}: {%= group.group_name %}</option>
+                        {% }); %}
+                    </select>
+                </td>
+            </tr>
+        {% } %}
+    {% } %}
+</script>

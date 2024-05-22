@@ -182,3 +182,24 @@ ul li:last-child {
 .borderless td, .borderless th {
   border: none !important;
 }
+
+.required::before {
+  content: "*";
+  padding: 0rem 0.6rem;
+  font-weight: bold;
+  color: rgb(169, 68, 66);
+}
+.group-id-cell::before {
+  content: '\2195';
+  padding: 0rem 0.4rem;
+  vertical-align: middle;
+}
+#tblGroupsList tbody td {
+  text-align: center;
+}
+#tblGroupsList tbody input[type="text"],
+#tblGroupsList tbody input[type="number"] {
+  margin: 0 auto;
+  display: block;
+  text-align: center;
+}

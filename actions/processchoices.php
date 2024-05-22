@@ -14,22 +14,27 @@ $result = ['success' => 0, 'msg' => 'requires POST'];
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $result['msg'] = $_POST;
-  $selectedProjects = json_decode(file_get_contents('php://input'), true);
-  $choices = array();
+  $result = ['msg' => $_POST, 'success' => false];
+  $selectedChoices = $_POST['project-selection'];
+  $choiceNumbers = $_POST['choice-number'];
 
-  if ($selectedProjects === null) {
+  $selectedGroups = [];
+  for ($i = 0; $i < count($selectedChoices); $i++) {
+      if (!empty($selectedChoices[$i])) {
+          $selectedGroups[] = [
+              'choice_number' => $choiceNumbers[$i],
+              'group_id' => $selectedChoices[$i]
+          ];
+      }
+  }
+
+  try {
+    $result['success'] = $allocationDAO->addChoices($LINK->id, $USER->id, $selectedGroups);
+    
+    $result['msg'] = "Group choices inserted successfully.";
+  } catch (Exception $e) {
       $result['success'] = 0;
-      $result['msg'] = "Error parsing JSON data";
-  } else {
-    try {
-      $result['success'] = $allocationDAO->addChoices($LINK->id, $USER->id, $selectedProjects) ? 1 : 0;
-      
-      $result['msg'] = "Group choices inserted successfully.";
-    } catch (Exception $e) {
-        $result['success'] = 0;
-        $result['msg'] = "Error inserting group choices: " . $e->getMessage();
-    }
+      $result['msg'] = "Error inserting group choices: " . $e->getMessage();
   }
 }
 

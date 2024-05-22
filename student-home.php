@@ -27,8 +27,7 @@ $selected_groups = $allocationDAO->getChoices($LINK->id, $USER->id);
 $context = [
     'instructor' => $USER->instructor,
     'styles' => [addSession('static/css/app.min.css'), addSession('static/css/custom.css')],
-    'scripts' => [addSession('static/js/Sortable.min.js'), addSession('static/js/moment.min.js'), addSession('static/js/Chart.bundle.min.js'), 
-                    addSession('static/js/app.js'), addSession('static/js/tmpl.min.js'), 'https://code.jquery.com/jquery-3.6.0.min.js'],
+    'scripts' => [addSession('static/js/app.js')],
     'debug' => $debug,
     'allocationdetails' => json_encode($allocation_details),
     'allocationgroups' => json_encode($allocation_groups),
@@ -54,6 +53,6 @@ Template::view('templates/student-body.html', $context);
 $OUTPUT->footerStart();
 
 Template::view('templates/student-footer.html', $context);
-
+include('templates/student_tmpl.html');
 $OUTPUT->footerEnd();
 ?>

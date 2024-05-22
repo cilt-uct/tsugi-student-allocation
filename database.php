@@ -71,7 +71,6 @@ $DATABASE_INSTALL = array(
             PRIMARY KEY (`link_id`, `user_id`, `choice_id`),
             INDEX `fk_allocation_choice_allocation_group_idx` (`group_id` ASC),
             INDEX `idx_user_id` (`user_id` ASC),
-            INDEX `idx_group_id` (`group_id` ASC),
             CONSTRAINT `fk_allocation_choice_allocation_group` 
                 FOREIGN KEY (`group_id`) 
                 REFERENCES `{$CFG->dbprefix}allocation_group` (`group_id`) 

@@ -83,21 +83,30 @@ class AllocationDAO {
 
     function addChoices($link_id, $user_id, $selectedGroups) {
         $values = array();
-
+        $placeholders = array();
         $query = "REPLACE INTO {$this->p}`allocation_choice`
             (`link_id`, `user_id`, `group_id`, `choice_id`, `created_by`)
-            VALUES";
+            VALUES ";
 
-            foreach ($selectedGroups['selectedProjects'] as $group) {
-                $groupId = $group['id'];
-                $groupLevel = $group['level'];
-                $arr = array(':linkId' => $link_id, ':userId' => $user_id, ':groupId' => $groupId, ':choiceId' => $groupLevel, ':createdBy' => $user_id);
+        foreach ($selectedGroups as $group) {
+            $choiceNumber = $group['choice_number'];
+            $groupId = $group['group_id'];
 
-                $values[] = "(:linkId, :userId, :groupId, :choiceId, :createdBy)";
-                
-                $this->PDOX->queryDie($query . " " . end($values), $arr);
+            if (!empty($groupId) && !empty($choiceNumber)) {
+                $placeholders[] = "(:linkId{$groupId}, :userId{$groupId}, :groupId{$groupId}, :choiceId{$groupId}, :createdBy{$groupId})";
+                $values[":linkId{$groupId}"] = $link_id;
+                $values[":userId{$groupId}"] = $user_id;
+                $values[":groupId{$groupId}"] = $groupId;
+                $values[":choiceId{$groupId}"] = $choiceNumber;
+                $values[":createdBy{$groupId}"] = $user_id;
             }
-
+        }
+    
+        if (!empty($placeholders)) {
+            $query .= implode(", ", $placeholders);
+            $this->PDOX->queryDie($query, $values);
+        }
+    
         return true;
     }
 
@@ -132,30 +141,18 @@ class AllocationDAO {
                 $studentId = ltrim($assignment['student_id'], 's');
                 $groupId = ltrim($assignment['assigned_group'], 'p');
 
-                // Check if there's already an assigned group for the user
                 $existingAssignedGroup = $this->getAssignedGroup($link_id, $studentId);
 
                 // If there's already an assigned group, reset it to 0
                 if ($existingAssignedGroup) {
-                    $resetArr = array(
-                        ':linkId' => $link_id,
-                        ':userId' => $studentId,
-                        ':groupId' => ltrim($existingAssignedGroup, 'p'),
-                        ':assigned' => 0,
-                        ':modifiedBy' => $user_id,
-                        ':modifiedAt' => date("Y-m-d H:i:s")
-                    );
+                    $resetArr = array(':linkId' => $link_id, ':userId' => $studentId, ':groupId' => ltrim($existingAssignedGroup, 'p'),
+                        ':assigned' => 0, ':modifiedBy' => $user_id, ':modifiedAt' => date("Y-m-d H:i:s"));
+                    
                     $this->PDOX->queryDie($query, $resetArr);
                 }
         
-                $arr = array(
-                    ':linkId' => $link_id,
-                    ':userId' => $studentId,
-                    ':groupId' => $groupId,
-                    ':assigned' => 1,
-                    ':modifiedBy' => $user_id,
-                    ':modifiedAt' => date("Y-m-d H:i:s")
-                );
+                $arr = array(':linkId' => $link_id, ':userId' => $studentId, ':groupId' => $groupId,
+                    ':assigned' => 1, ':modifiedBy' => $user_id, ':modifiedAt' => date("Y-m-d H:i:s"));
 
                 $this->PDOX->queryDie($query, $arr);
             }
@@ -168,48 +165,36 @@ class AllocationDAO {
     }
 
     function getAssignedGroup($link_id, $user_id) {
-        $query = "SELECT `group_id` FROM {$this->p}`allocation_choice`
-                    WHERE `link_id` = :linkId AND `user_id` = :userId AND `assigned` = 1";
-                    
-        $arr = array(':linkId' => $link_id, ':userId' => $user_id);
-
-        $row = $this->PDOX->rowDie($query, $arr);
+        $row =  $this->PDOX->rowDie("SELECT `group_id` FROM {$this->p}`allocation_choice`
+                    WHERE `link_id` = :linkId AND `user_id` = :userId AND `assigned` = :assigned",
+                array(':linkId' => $link_id, ':userId' => $user_id, ':assigned' => 1));
 
         return $row ? $row['group_id'] : null;
     }
 
-    function setState($link_id, $site_id, $user_id, $state) {
+    function assignUser($link_id, $user_id, $student_id, $group_id) {
         try { 
+            $this->PDOX->queryDie("UPDATE {$this->p}`allocation_choice`
+                    SET `assigned` = :assigned, `modified_by` = :modifiedBy, `modified_at` = :modifiedAt
+                    WHERE `link_id` = :linkId AND `user_id` = :studentId AND `group_id` = :groupId",
+                array(':linkId' => $link_id, ':studentId' => $student_id, ':groupId' => $group_id,
+                    ':assigned' => 1, ':modifiedBy' => $user_id, ':modifiedAt' => date("Y-m-d H:i:s")));
 
-            $query = "UPDATE {$this->p}`allocation_site`
+            return true;
+        } catch (PDOException $e) {
+            throw $e;
+            return json_encode(["error" => "PDO Exception: " . $e->getMessage()]);
+        }
+    }
+
+    function setState($link_id, $user_id, $state) {
+        try { 
+            $this->PDOX->queryDie("UPDATE {$this->p}`allocation_site`
                 SET `state` = :toolState, `modified_by` = :modifiedBy, `modified_at` = :modifiedAt
-                WHERE link_id = :linkId AND `site_id` = :siteId;";
-
-            $arr = array(
-                ':linkId' => $link_id, 
-                ':siteId' => $site_id, 
-                ':toolState' => $state, 
-                ':modifiedBy' => $user_id, 
-                ':modifiedAt' => date("Y-m-d H:i:s")
-            );
-
-            $success = $this->PDOX->queryDie($query, $arr);
-
-            // Create the response array
-            $response = [
-                'success' => $success ? 1 : 0,
-                'query' => $query, // Include the query in the response
-                'parameters' => [
-                    'linkId' => $link_id,
-                    'siteId' => $site_id,
-                    'toolState' => $state,
-                    'modifiedBy' => $user_id,
-                    'modifiedAt' => date("Y-m-d H:i:s")
-                ]
-            ];
+                WHERE link_id = :linkId",
+            array(':linkId' => $link_id, ':toolState' => $state, ':modifiedBy' => $user_id, ':modifiedAt' => date("Y-m-d H:i:s")));
     
-            return $response;
-
+            return  true;
         } catch (PDOException $e) {
             throw $e;
             return json_encode(["error" => "PDO Exception: " . $e->getMessage()]);

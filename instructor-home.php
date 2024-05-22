@@ -27,12 +27,12 @@ $tool_id = $LINK->id;
 $context = [
     'instructor' => $USER->instructor,
     'styles' => [addSession('static/css/app.min.css'), addSession('static/css/custom.css')],
-    'scripts' => [addSession('static/js/Sortable.min.js'), addSession('static/js/moment.min.js'), addSession('static/js/Chart.bundle.min.js'), 
-                    addSession('static/js/app.js'), addSession('static/js/tmpl.min.js'), 'https://code.jquery.com/jquery-3.6.0.min.js'],
+    'scripts' => [addSession('static/js/app.js')],
     'debug' => $debug,
     'allocate' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('scripts/perl.php'))),
     'configure' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/configure.php'))),
     'updatestate' =>addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/set_state.php'))),
+    'assign' =>addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/assign.php'))),
     'toolid' => $tool_id,
     'allocationsettings' => json_encode($allocation_settings),
     'allocationgroups' => json_encode($groups),
@@ -55,6 +55,6 @@ Template::view('templates/instructor-body.html', $context);
 $OUTPUT->footerStart();
 
 Template::view('templates/instructor-footer.html', $context);
-
+include('templates/instructor_tmpl.html');
 $OUTPUT->footerEnd();
 ?>

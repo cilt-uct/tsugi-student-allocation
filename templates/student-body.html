@@ -10,44 +10,30 @@
             <br/><br/>
         </div>
         
-        <div id="tool-details">
-            <blockquote class="bg-info">
-                <p>Select <b>at least 3 and up to 10 choices</b> from the list below for the electronic selection process. 
-                    If you fail to make selections, you'll be randomly allocated to a project.
-                    Make your choices in <b><span class="text-danger">order of preference</span></b>. The deadline for selections is <b>April 30, 2024</b>.</p>
-            </blockquote>
-            <div class="row justify-content-center">
-                <div class="col-sm-offset-3 col-md-6">
-                    <table class="table table-bordered">
-                        <tbody>
-                        
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
+        <div id="tool_details">
+            <blockquote class="bg-info" id="bqSettings"></blockquote>
             <div class="row">
-                <div style="display: none;" id="assigned_div">
-                    <h4>Assigned to: </h4>
-                    <p id="assigned_to"></p>
-                </div>
+                <div style="display: none;" id="assigned_div"></div>
                 <div id="projects-container">
                     <br/>
                     <h3>My Choices:</h3>
                     
-                    <table class="table table-bordered">
-                        <thead class="bg-info">
-                            <tr>
-                                <th class="text-center">Choice #</th>
-                                <th class="text-center">Title</th>
-                            </tr>
-                        </thead>
-                        <tbody id="project-list"></tbody>
-                    </table>
-                    <br/>
 
-                    <button id="submit-selection" name="submit-selection" class="btn btn-success pull-right">Submit Choices</button>
-                    <b><span id="error-message" name="error-message" class="text-danger"></span></b>
+                    <form id="frmSubmitChoices" method="post">
+                        <table class="table table-bordered" id="tblGroups">
+                            <thead class="bg-info">
+                                <tr>
+                                    <th class="text-center">Choice #</th>
+                                    <th class="text-center">Title</th>
+                                </tr>
+                            </thead>
+                            <tbody id="project-list"></tbody>
+                        </table>
+                        <br/>
+
+                        <button type="submit" id="btnSubmitChoices" name="btnSubmitChoices" class="btn btn-success pull-right">Submit Choices</button>
+                        <b><span id="error-message" name="error-message" class="text-danger"></span></b>
+                    </form>
                 </div>
             </div>
         </div>
