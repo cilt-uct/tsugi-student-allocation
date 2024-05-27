@@ -17,6 +17,7 @@ $debug = 1;
 $menu = false;
 
 $site_id = $LAUNCH->ltiRawParameter('context_id','none');
+$user_eid = $LAUNCH->ltiRawParameter('user_id', 'none');
 $allocationDAO = new AllocationDAO($PDOX, $CFG->dbprefix, $tool);
 
 $allocation_settings = $allocationDAO->getSettings($LINK->id,$site_id);
@@ -27,16 +28,18 @@ $tool_id = $LINK->id;
 $context = [
     'instructor' => $USER->instructor,
     'styles' => [addSession('static/css/app.min.css'), addSession('static/css/custom.css')],
-    'scripts' => [addSession('static/js/app.js')],
+    'scripts' => [addSession('static/js/app.js'),  addSession('static/js/Sortable.min.js')],
     'debug' => $debug,
     'allocate' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('scripts/perl.php'))),
     'configure' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/configure.php'))),
     'updatestate' =>addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/set_state.php'))),
     'assign' =>addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/assign.php'))),
+    'checkwaitingsites' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('scripts/check.pl'))),
     'toolid' => $tool_id,
     'allocationsettings' => json_encode($allocation_settings),
     'allocationgroups' => json_encode($groups),
     'studentchoices' => json_encode($student_choices), 
+    'eid' => $user_eid, 
 ];
 
 if (!$USER->instructor) {

@@ -18,11 +18,13 @@ $menu = false;
 $is_student = true;
 
 $site_id = $LAUNCH->ltiRawParameter('context_id','none');
+$eid = $LAUNCH->ltiRawParameter('user_id', 'none');
+$username = $LAUNCH->ltiRawParameter('lis_person_sourcedid', 'none');
 $allocationDAO = new AllocationDAO($PDOX, $CFG->dbprefix, $tool);
 
 $allocation_details = $allocationDAO->getSettings($LINK->id,$site_id);
 $allocation_groups = $allocationDAO->getGroups($LINK->id,$site_id);
-$selected_groups = $allocationDAO->getChoices($LINK->id, $USER->id);
+$selected_groups = $allocationDAO->getChoices($LINK->id, $eid);
 
 $context = [
     'instructor' => $USER->instructor,
@@ -34,6 +36,8 @@ $context = [
     'addchoices' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/processchoices.php'))),
     'selectedgroups' => json_encode($selected_groups),
     'userid' => $USER->id,
+    'username' => $username,
+    'eid' => $eid,
 ];
 
 if ($USER->instructor) {

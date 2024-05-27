@@ -1,28 +1,12 @@
 <?php
-require_once "../../config.php";
-include "../tool-config_dist.php";
-require_once("../dao/AllocationDAO.php");
-
-use \Tsugi\Core\LTIX;
-use \Tsugi\Core\Settings;
-use \Allocation\DAO\AllocationDAO;
-
-// Sanity checks
-$LAUNCH = LTIX::requireData();
-
-if ( ! $USER->instructor ) die('Must be instructor');
-
-echo("<pre>\n");
-
-$site_id = $LAUNCH->ltiRawParameter('context_id','none');
-$allocationDAO = new AllocationDAO($PDOX, $CFG->dbprefix, $tool);
-$groups = $allocationDAO->getGroups($LINK->id);
-$student_choices = $allocationDAO->getChoices($LINK->id);
+$site_id = $argv[1];
+$link_id = $argv[2];
+$student_choices = json_decode($argv[3], true);
+$groups = json_decode($argv[4], true);
 
 // Temporary cleanup /tmp
 echo(shell_exec ( 'rm -f /tmp/i* /tmp/o*' ));
 
-$json = Settings::linkGet('json'); // LTI_LINK JSON > contains the course settings
 
 $projects = array();
 foreach($groups as $group ) {
@@ -75,7 +59,7 @@ $file = fopen($ilec, "w");
 fwrite($file, "l1 100000\n");
 fclose($file);
 
-$cmd = "perl allocate.pl $istu $ipro $ilec $ostu $opro $olec";
+$cmd = "perl /var/www/vhosts/tsugidev.uct.ac.za/mod/tsugi-student-allocation/scripts/allocate.pl $istu $ipro $ilec $ostu $opro $olec";
 echo($cmd);
 echo(shell_exec ( $cmd ));
 
@@ -98,14 +82,11 @@ if ($file) {
         ];
     }
 
-    $allocationDAO->addAssignments($LINK->id, $USER->id, $assignments);
     fclose($file);
 
 } else {
     echo "Error opening file: $ostu";
 }
-/*
-echo("Hello\n");
-echo(shell_exec ( '/bin/bash zap.sh bob' ));
-echo("Back from shell\n");
-*/
+
+// Output $assignments array as JSON
+echo json_encode($assignments);

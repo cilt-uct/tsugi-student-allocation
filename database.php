@@ -16,7 +16,7 @@ $DATABASE_UNINSTALL = array(
 $DATABASE_INSTALL = array(
     array("{$CFG->dbprefix}allocation_site",
         "CREATE TABLE `{$CFG->dbprefix}allocation_site` (
-            `link_id` INT(11) NOT NULL,
+            `link_id` INT(11) NOT NULL AUTO_INCREMENT,
             `site_id` VARCHAR(99) NOT NULL,
             `name` VARCHAR(255) NOT NULL,
             `instructions` TEXT NULL DEFAULT NULL,
@@ -30,7 +30,7 @@ $DATABASE_INSTALL = array(
             `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `created_by` INT(11) NOT NULL,
             `modified_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `modified_by` INT(11) NOT NULL,
+            `modified_by` INT(11) NOT NULL DEFAULT 0,
 
             PRIMARY KEY (`link_id`, `site_id`),
             INDEX `idx_site_id` (`site_id` ASC)
@@ -45,13 +45,14 @@ $DATABASE_INSTALL = array(
             `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `created_by` INT(11) NOT NULL,
             `modified_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `modified_by` INT(11) NOT NULL,
+            `modified_by` INT(11) NOT NULL DEFAULT 0,
 
             PRIMARY KEY (`group_id`, `link_id`),
             INDEX `fk_allocation_group_allocation_site_idx` (`link_id` ASC),
             CONSTRAINT `fk_allocation_group_allocation_site`
                 FOREIGN KEY (`link_id`)
-                REFERENCES `{$CFG->dbprefix}allocation_site` (`link_id`)
+		REFERENCES `{$CFG->dbprefix}allocation_site` (`link_id`)
+		ON DELETE CASCADE
                 ON UPDATE NO ACTION
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3"
     ),
@@ -66,7 +67,7 @@ $DATABASE_INSTALL = array(
             `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `created_by` VARCHAR(99) NOT NULL,
             `modified_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `modified_by` VARCHAR(99) NOT NULL,
+            `modified_by` VARCHAR(99) NOT NULL DEFAULT 0,
             
             PRIMARY KEY (`link_id`, `user_id`, `choice_id`),
             INDEX `fk_allocation_choice_allocation_group_idx` (`group_id` ASC),
@@ -74,10 +75,12 @@ $DATABASE_INSTALL = array(
             CONSTRAINT `fk_allocation_choice_allocation_group` 
                 FOREIGN KEY (`group_id`) 
                 REFERENCES `{$CFG->dbprefix}allocation_group` (`group_id`) 
-                ON UPDATE NO ACTION,
+		ON DELETE CASCADE
+		ON UPDATE NO ACTION,
             CONSTRAINT `fk_allocation_choice_allocation_site`
                 FOREIGN KEY (`link_id`)
-                REFERENCES `{$CFG->dbprefix}allocation_site` (`link_id`)
+		REFERENCES `{$CFG->dbprefix}allocation_site` (`link_id`)
+		ON DELETE CASCADE
                 ON UPDATE NO ACTION
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3"
     )

@@ -23,18 +23,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $max_selections = intval($_POST['max-selections']);
     $release_date = date('Y-m-d', strtotime($_POST['release-date']));
     $closing_date = date('Y-m-d', strtotime($_POST['closing-date']));
-    $groups_doc =  isset($_POST['groups-doc']) ? htmlspecialchars($_POST['groups-doc'], ENT_QUOTES, 'UTF-8') : '';
+    $groups_doc =  isset($_POST['topics-info']) ? htmlspecialchars($_POST['topics-info'], ENT_QUOTES, 'UTF-8') : '';
 
     $groups = array();
     if (isset($_POST['group-id']) && isset($_POST['group-title']) && isset($_POST['group-size'])) {
         $group_ids = $_POST['group-id'];
         $group_titles = $_POST['group-title'];
         $group_sizes = $_POST['group-size'];
-        for ($i = 0; $i < count($group_ids); $i++) {
+        $group_delete = $_POST['group-delete'];
+	for ($i = 0; $i < count($group_ids); $i++) {
             $groups[] = array(
                 'id' => $group_ids[$i],
                 'title' => htmlspecialchars($group_titles[$i], ENT_QUOTES, 'UTF-8'),
-                'size' => intval($group_sizes[$i])
+		'size' => intval($group_sizes[$i]),
+		'delete' => $group_delete[$i] === '1'
             );
         }
     }

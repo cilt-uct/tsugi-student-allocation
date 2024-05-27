@@ -9,6 +9,8 @@ use \Allocation\DAO\AllocationDAO;
 $LAUNCH = LTIX::requireData();
 
 $allocationDAO = new AllocationDAO($PDOX, $CFG->dbprefix, $tool);
+$eid = $LAUNCH->ltiRawParameter('user_id', 'none');
+$user_name = $LAUNCH->ltiRawParameter('lis_person_sourcedid', 'none');
 
 $result = ['success' => 0, 'msg' => 'requires POST'];
 
@@ -29,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   try {
-    $result['success'] = $allocationDAO->addChoices($LINK->id, $USER->id, $selectedGroups);
+    $result['success'] = $allocationDAO->addChoices($LINK->id, $eid, $user_name, $selectedGroups);
     
     $result['msg'] = "Group choices inserted successfully.";
   } catch (Exception $e) {

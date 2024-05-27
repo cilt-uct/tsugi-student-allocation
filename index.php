@@ -6,10 +6,16 @@ require_once "dao/AllocationDAO.php";
 
 use \Tsugi\Core\LTIX;
 use \Tsugi\Core\Settings;
+use \Tsugi\Core\Roster;
 use \Tsugi\UI\SettingsForm;
 use \Allocation\DAO\AllocationDAO;
 
 $LAUNCH = LTIX::requireData();
+$displayname = $USER->displayname;
+$course_settings = Settings::linkGet('json');
+
+//$hasRosters = LTIX::populateRoster(false, true, null);
+//$handledRoster = LTIX::populateRoster(false, true);
 
 $site_id = $LAUNCH->ltiRawParameter('context_id','none');
 $allocationDAO = new AllocationDAO($PDOX, $CFG->dbprefix, $tool);

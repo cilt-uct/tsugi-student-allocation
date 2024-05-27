@@ -1,23 +1,27 @@
 <section>
-    <!-- Student View -->
-    <div id="student-view" class="container mt-5">
-        <!-- <h3 class="text-center"> SSM Project Allocation</h2> -->
-
-        <h2>SSM Project Selection Form</h2>
-
-        <div id="tool-placeholder" class="bg-info text-center" style="display: none;"><br/><br/>
-            <h3>This tool is not yet configured! <br/> Please contact your administrator for more information.</h3>
-            <br/><br/>
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation" id="tsugi_tool_nav_bar">  
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="index.php" id="tool-title">Topic Allocator</a>
+            </div>
         </div>
-        
-        <div id="tool_details">
-            <blockquote class="bg-info" id="bqSettings"></blockquote>
+    </nav>
+    <div id="student-view" class="container mt-5">
+        <div id="tool-details" class="padded" hidden>
+            <div id="divInstructions">
+                <div id="instructions"></div>
+            </div>
             <div class="row">
-                <div style="display: none;" id="assigned_div"></div>
+                <div style="display: none;" class="text-center" id="assigned_div"></div>
                 <div id="projects-container">
                     <br/>
                     <h3>My Choices:</h3>
-                    
 
                     <form id="frmSubmitChoices" method="post">
                         <table class="table table-bordered" id="tblGroups">
@@ -38,5 +42,4 @@
             </div>
         </div>
     </div>
-
 </section>

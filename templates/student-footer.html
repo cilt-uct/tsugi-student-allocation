@@ -4,37 +4,65 @@
 
 <script type="text/javascript">  
     var selectedChoices = [];
+    var currentDate = new Date();
+    var today = currentDate.getFullYear() + '-' + ('0' + (currentDate.getMonth() + 1)).slice(-2) + '-' + ('0' + currentDate.getDate()).slice(-2);
 
     $(document).ready(function(){
         var _settings = JSON.parse('{{$allocationdetails}}');
         var _options = JSON.parse('{{$allocationgroups}}');
         var _choices = JSON.parse('{{$selectedgroups}}');
-        var projectsContainer = $('#projects-container');
-
+   
         if(_settings.length > 0 || _options.length > 0 || _choices.length > 0) {
             var details = _settings[0];
-            var assignedGroup = _choices.find(choice => choice.assigned === "1");
+	        var releaseDate = details.release_date.split(' ')[0];
+            var closingDate = details.closing_date.split(' ')[0];
+	        var assignedGroup = _choices.find(choice => choice.assigned === 1);
             var state = _settings[0].state;
 
-            $('#bqSettings').html(tmpl('tmpl-settings', details));
-            if (assignedGroup) {
-                $('#assigned_div').html(tmpl('tmpl-assigned-to', assignedGroup));
-                $('#assigned_div').show();
-                $('#submit-selection').hide();
-            }
-            
-            $('#tblGroups tbody').html(tmpl('tmpl-option-row', { details: details, choices: _choices, options: _options }));
+	        $('#tool-title').html(details.name);
+	   
+	        // Check if the tool is released
+            if (today < releaseDate) {
+                window.location.href = 'coming-soon.php';
+            } else {
+                // Check if groups or projects are set
+                if (_options.length > 0) {
+                    $('#instructions').html(tmpl('tmpl-settings', details));
+                    $('#tblGroups tbody').html(tmpl('tmpl-option-row', { details: details, choices: _choices, options: _options }));
+                    
+		            // Check if the student is already assigned to a group or project
+                    if (assignedGroup) {
+                        $('#assigned_div').html(tmpl('tmpl-assigned-to', assignedGroup));
+                        $('#assigned_div').show();
+                        $('#tblGroups select').attr("disabled", "disabled");
+                        $('#btnSubmitChoices, #divInstructions').hide();
+                    }
 
-            $('#tool-placeholder').hide();
-            if (state === "waiting") {
+		            // Check if allocation is in progress and disable project selection
+                    if (state === "waiting") {
+                        $('#frmSubmitChoices').find('select, button').prop('disabled', true);
+                        $('#btnSubmitChoices').hide();
+                    }
+
+                    // Check if allocation is complete
+                    if (state === "assigned") {
+                        $('#tblGroups select').attr('disabled', "disabled");
+                        $('#btnSubmitChoices').hide();
+                    }
+
+                    $('#tool-details').show();
+                } else {
+                    window.location.href = 'coming-soon.php';
+                }
+            }
+
+            // Check if expiry date reached or passed
+            if(today > closingDate) {
                 $('#frmSubmitChoices').find('select, button').prop('disabled', true);
                 $('#btnSubmitChoices').hide();
             }
-            $('#tool-details').show();
-        }
-        else {
-            $('#tool-placeholder').show();
-            $('#tool-details').hide();
+	    }else {
+            window.location.href = 'coming-soon.php';
         }
 
         $('#frmSubmitChoices').submit(function(event) {
@@ -52,7 +80,6 @@
                 $('#error-message').hide();
             }
 
-
             $.ajax({
                 url: '{{ $addchoices }}',
                 type: 'POST',
@@ -64,7 +91,7 @@
                 },
                 error: function(xhr, status, error) {
                     console.error(error);
-                    $('#error-message').html('An error occurred while processing your request. Please try again later.');
+                    $('#error-message').html('An error occurred while processing your submission. Please try again later.');
                     $('#error-message').show();
                 }
             });
@@ -75,37 +102,6 @@
         })
 
     });
-    
-    function populateAllocationDetails(details, options, choices) {
-        var currentDate = new Date();
-        var formattedDate = currentDate.getFullYear() + '-' + ('0' + (currentDate.getMonth() + 1)).slice(-2) + '-' + ('0' + currentDate.getDate()).slice(-2);
-        var assignedGroup = choices.find(choice => choice.assigned === "1");
-        var closingDate = details.closing_date.split(' ')[0];
-        
-        for (var i = 1; i <= details.max_selections; i++) {
-            var selectId = 'select_' + i;
-            var rowId = 'row_' + i;
-            
-            var row = '<tr>' +
-                        '<td class="text-center"><input type="hidden" id="choice-number[]" name="choice-number[]" value="' + i + '" />' + i + '</td>' +
-                        '<td>' +
-                            '<select class="form-control project-selection" data-id="' + selectId + '" name="project-selection" data-row="' + rowId + '">';
-
-            var choiceForLevel = choices.find(choice => choice.choice_id === i.toString());
-
-            row += '<option value="" selected>Select</option>';
-            options.forEach(function(group) {
-                var isSelected = choiceForLevel && choiceForLevel.group_id === group.group_id ? 'selected' : '';
-                row += '<option value="' + group.group_id + '" ' + isSelected + '>' + group.group_id + ': ' + group.group_name + '</option>';
-            });
-
-            row += '</select>' +
-                    '</td>' +
-                '</tr>';
-
-            $('#project-list').append(row);
-        }
-    }
 
     function updateChoices(select) {
         var selectedChoice = select.value;

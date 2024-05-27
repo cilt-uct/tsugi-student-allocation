@@ -162,7 +162,6 @@ ul li a {
   opacity: 1;
 }
 
-
 ul li.added {
   height: 0;
 }
@@ -189,17 +188,83 @@ ul li:last-child {
   font-weight: bold;
   color: rgb(169, 68, 66);
 }
+
+.not-required::before {
+  content: "*";
+  padding: 0rem 0.6rem;
+  font-weight: bold;
+  color: rgb(255,255,255);
+}
+
 .group-id-cell::before {
   content: '\2195';
   padding: 0rem 0.4rem;
   vertical-align: middle;
 }
+
 #tblGroupsList tbody td {
   text-align: center;
 }
+
 #tblGroupsList tbody input[type="text"],
 #tblGroupsList tbody input[type="number"] {
   margin: 0 auto;
   display: block;
   text-align: center;
+}
+
+.row-padding {
+  margin-bottom: 0.9375rem;
+}
+
+.text-area {
+  margin-left: 0.75rem;
+}
+
+.small-input {
+  max-width: 100px;
+  margin-right: 20px;
+}
+
+.error-message {
+  display: block;
+  margin-top: -20px;
+}
+
+.error-message::before {
+  content: "\A";
+  white-space: pre;
+  margin-top: 10px;
+}
+
+.has-error {
+  border: 1px solid red;
+}
+
+@media (max-width: 576px) {
+  .pull-right {
+    float: none !important;
+  }
+}
+
+.form-button {
+  margin-right: 10px;
+}
+
+.padded {
+  margin-top: 5.125rem;
+  margin-bottom: 3.125rem;
+}
+
+/* label {
+  margin-top: 10px;
+} */
+
+#tsugi_tool_nav_bar .navbar-nav > .active > a {
+  color: purple;
+  font-weight: bold;
+}
+.download {
+  background-color: #02caa0;
+  color: white;
 }

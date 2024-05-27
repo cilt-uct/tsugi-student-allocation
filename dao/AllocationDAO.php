@@ -47,15 +47,21 @@ class AllocationDAO {
             
             // Insert / Update allocation groups 
             foreach ($groups as $group) {
-                $this->PDOX->queryDie("INSERT INTO {$this->p}`allocation_group`
-                        (`group_id`, `link_id`, `group_name`, `group_size`, `created_by`)
-                        VALUES (:groupId, :linkId, :groupName, :groupSize, :createdBy)
-                        ON DUPLICATE KEY UPDATE
-                        `group_name` = VALUES(`group_name`),
-                        `group_size` = VALUES(`group_size`),
-                        `created_by` = VALUES(`created_by`)",
-                    array(':groupId' => $group['id'], ':linkId' => $link_id, ':groupName' => $group['title'], 
-                          ':groupSize' => $group['size'], ':createdBy' => $user_id));
+	        if ($group['delete']) {
+		    // Delete the row if marked for deletion
+                    $this->PDOX->queryDie("DELETE FROM {$this->p}`allocation_group` WHERE `link_id` = :linkId AND `group_id` = :groupId",
+                                    array(':linkId' => $link_id, ':groupId' => $group['id']));
+                } else {
+	        	$this->PDOX->queryDie("INSERT INTO {$this->p}`allocation_group`
+                            (`group_id`, `link_id`, `group_name`, `group_size`, `created_by`)
+                            VALUES (:groupId, :linkId, :groupName, :groupSize, :createdBy)
+                            ON DUPLICATE KEY UPDATE
+                            `group_name` = VALUES(`group_name`),
+                            `group_size` = VALUES(`group_size`),
+                            `created_by` = VALUES(`created_by`)",
+                        array(':groupId' => $group['id'], ':linkId' => $link_id, ':groupName' => $group['title'], 
+                            ':groupSize' => $group['size'], ':createdBy' => $user_id));
+		}
             }
 
             return true;
@@ -81,11 +87,11 @@ class AllocationDAO {
         return $this->PDOX->allRowsDie($query, $arr);
     }
 
-    function addChoices($link_id, $user_id, $selectedGroups) {
+    function addChoices($link_id, $user_id, $user_name, $selectedGroups) {
         $values = array();
         $placeholders = array();
         $query = "REPLACE INTO {$this->p}`allocation_choice`
-            (`link_id`, `user_id`, `group_id`, `choice_id`, `created_by`)
+            (`link_id`, `user_id`, `user_name`, `group_id`, `choice_id`, `created_by`)
             VALUES ";
 
         foreach ($selectedGroups as $group) {
@@ -93,9 +99,10 @@ class AllocationDAO {
             $groupId = $group['group_id'];
 
             if (!empty($groupId) && !empty($choiceNumber)) {
-                $placeholders[] = "(:linkId{$groupId}, :userId{$groupId}, :groupId{$groupId}, :choiceId{$groupId}, :createdBy{$groupId})";
-                $values[":linkId{$groupId}"] = $link_id;
-                $values[":userId{$groupId}"] = $user_id;
+                $placeholders[] = "(:linkId{$groupId}, :userId{$groupId}, :userName{$groupId}, :groupId{$groupId}, :choiceId{$groupId}, :createdBy{$groupId})";
+		$values[":linkId{$groupId}"] = $link_id;
+		$values[":userId{$groupId}"] = $user_id;
+		$values[":userName{$groupId}"] = $user_name;
                 $values[":groupId{$groupId}"] = $groupId;
                 $values[":choiceId{$groupId}"] = $choiceNumber;
                 $values[":createdBy{$groupId}"] = $user_id;
@@ -111,13 +118,15 @@ class AllocationDAO {
     }
 
     function getChoices($link_id, $user_id = null) {
-        $query = "SELECT `choice`.*, `group`.`group_name` AS `group_name`, `group`.`group_size` AS `group_size`, `user`.`displayname` AS `user_name` 
-            FROM {$this->p}`allocation_choice` AS `choice`
-            LEFT JOIN `allocation_group` AS `group` ON `choice`.`group_id` = `group`.`group_id`
-            LEFT JOIN `lti_user` AS `user` ON `choice`.`user_id` = `user`.`user_id`
-            WHERE `choice`.`link_id` = :linkId";
 
-        $arr = array(':linkId' => $link_id);
+	$query = "SELECT `choice`.*, `user`.`displayname` AS `full_name`, `group`.`group_name` AS `group_name`, `group`.`group_size` AS `group_size`
+		FROM   {$this->p}`allocation_choice` AS `choice`
+		LEFT JOIN `lti_user` AS `user` ON `choice`.`user_id` = `user`.`user_key`
+		LEFT JOIN (SELECT `group_id`, `group_name`, `group_size` FROM `allocation_group` WHERE `link_id` = :linkId) AS `group` 
+			ON `choice`.`group_id` = `group`.`group_id` 
+		WHERE `choice`.`link_id` = :linkId";
+	    
+	$arr = array(':linkId' => $link_id);
 
         // If user_id is provided, include it in the query and parameters
         if ($user_id !== null) {
