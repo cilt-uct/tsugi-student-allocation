@@ -30,7 +30,7 @@
         <div class="tab-content">
             <div id="add-groups-tab" class="tab-pane fade in active">
                 <div class="padded"> 
-                    <p>Create topics for students to select. Fill in the settings below to adjust options, such as how many topics students can select, the date when students need to have selected their topics by and so on. <b>All fields marked with <span class="text-danger">*</span> are required!</b></p>
+                    <p>To create topics for students to select from, fill in the settings below. <b>All fields marked with <span class="text-danger">*</span> are required!</b></p>
                     <hr/>
                 </div>
 
@@ -49,10 +49,11 @@
                         <div class="col-md-6 col-sm-6 col-xs-12">
                             <label for="release-date" class="form-label required">Release Date:</label>
                             <input type="date" class="form-control" id="release-date" name="release-date" required>
+                            <span class="text-danger error-message" id="dates-error" name="dates-error"></span>
                         </div>
                         <div class="col-md-6 col-sm-6 col-xs-12">
                             <label for="closing-date" class="form-label required">Closing Date:</label>
-                            <input type="date" class="form-control" id="closing-date" name="closing-date" required>
+                            <input type="date" class="form-control" id="closing-date" name="closing-date" min="<?= date('Y-m-d'); ?>" required>
                         </div>
                     </div>
                     <div class="row row-padding">
@@ -71,8 +72,8 @@
                     </div>
 
                     <br/>
-                    <h3>Topics</h3>
-                    <table class="table table-bordered" id="tblGroupsList">
+                    <h3><span class="fas fa-edit" aria-hidden="true"></span>  OPTIONS</h3>
+                    <table class="table table-bordered table-rounded" id="tblGroupsList">
                         <thead class="bg-info">
                             <tr>
                                 <th class="text-center">ID</th>
@@ -117,8 +118,8 @@
                 <div id="divSelections">
                     <button type = "button" id="run_allocation" name="run_allocation" class="btn btn-primary pull-right">Run Allocation</button>
                     <br/><br/>
-                    <h3 id="selections_title">SELECTIONS</h3>
-                    <table class="table table-bordered" id="tbl-allocation-choices">
+                    <h3 id="selections_title"><span><i class='far fa-hand-point-left' aria-hidden="true"></i></span> SELECTIONS</h3>
+                    <table class="table table-bordered table-rounded" id="tbl-allocation-choices">
                         <thead class="bg-info">
                             <tr>
                                 <th>Student ID</th>
@@ -138,8 +139,8 @@
 
                     <br/><br/>
 
-                    <h3 id="memberships_title">Memberships</h3>
-                    <table class="table" id="tbl-user-memberships">
+                    <h3 id="memberships_title"><span><i class="fa fa-group"></i></span> MEMBERSHIPS</h3>
+                    <table class="table table-bordered table-rounded" id="tbl-user-memberships">
                         <thead class="bg-info">
                             <tr>
                                 <th>Student ID</th>
