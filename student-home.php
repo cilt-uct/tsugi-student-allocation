@@ -19,9 +19,11 @@ $is_student = true;
 
 $site_id = $LAUNCH->ltiRawParameter('context_id','none');
 $eid = $LAUNCH->ltiRawParameter('user_id', 'none');
-$username = $LAUNCH->ltiRawParameter('lis_person_sourcedid', 'none');
-$allocationDAO = new AllocationDAO($PDOX, $CFG->dbprefix, $tool);
+$sakai_username = $LAUNCH->ltiRawParameter('ext_sakai_eid', 'none');
+$d2l_username = $LAUNCH->ltiRawParameter('ext_d2l_username', 'none');
+$username = ($d2l_username !== 'none') ? $d2l_username : $sakai_username;
 
+$allocationDAO = new AllocationDAO($PDOX, $CFG->dbprefix, $tool);
 $allocation_details = $allocationDAO->getSettings($LINK->id,$site_id);
 $allocation_groups = $allocationDAO->getGroups($LINK->id,$site_id);
 $selected_groups = $allocationDAO->getChoices($LINK->id, $eid);

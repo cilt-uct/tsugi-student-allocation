@@ -73,7 +73,7 @@
             }).length;
 
             if (selectedCount < details.min_selections) {
-                $('#error-message').html('<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Please select at least ' + details.min_selections + ' option(s) before submission.');
+                $('#error-message').html('<span class="fa fa-exclamation" aria-hidden="true"></span> Please select at least ' + details.min_selections + ' option(s) before submission.');
                 return; 
             } else {
                 $('#error-message').html(''); 
@@ -87,12 +87,15 @@
                 contentType: false,
                 processData: false,
                 success: function(response) {
-                    location.reload();
+                    $('#statusMessage').html('<span class="fa fa-check-circle text-success fa-2x" aria-hidden="true"></span> Your choices were saved successfully.');
+                    $('#statusMessage').addClass('text-success');
+                    $('#statusModal').modal('show');
                 },
                 error: function(xhr, status, error) {
                     console.error(error);
-                    $('#error-message').html('An error occurred while processing your submission. Please try again later.');
-                    $('#error-message').show();
+                    $('#statusModalLabel').html('<span class="fas fa-circle-xmark text-danger fa-2x" aria-hidden="true"></span> An error occurred while processing your submission. Please try again later.');
+                    $('#statusMessage').text('There was an error processing the information.');
+                    $('#statusModal').modal('show');
                 }
             });
         });
@@ -100,6 +103,10 @@
         $('.project-selection').change(function() {
             updateChoices(this);
         })
+
+        $('#closeModalButton').click(function() {
+            location.reload();
+        });
 
     });
 

@@ -209,6 +209,14 @@ class AllocationDAO {
             return json_encode(["error" => "PDO Exception: " . $e->getMessage()]);
         }
     }
+
+    function checkState($link_id, $site_id) {
+        $query = "SELECT `state` FROM {$this->p}`allocation_site`
+            WHERE `link_id` = :linkId AND `site_id` = :siteId;";
+
+        $arr = array(':linkId' => $link_id, ':siteId' => $site_id);
+        return $this->PDOX->allRowsDie($query, $arr);
+    }
 }
 
 ?>

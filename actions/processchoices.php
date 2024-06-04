@@ -10,7 +10,9 @@ $LAUNCH = LTIX::requireData();
 
 $allocationDAO = new AllocationDAO($PDOX, $CFG->dbprefix, $tool);
 $eid = $LAUNCH->ltiRawParameter('user_id', 'none');
-$user_name = $LAUNCH->ltiRawParameter('lis_person_sourcedid', 'none');
+$sakai_username = $LAUNCH->ltiRawParameter('ext_sakai_eid', 'none');
+$d2l_username = $LAUNCH->ltiRawParameter('ext_d2l_username', 'none');
+$user_name = ($d2l_username !== 'none') ? $d2l_username : $sakai_username;
 
 $result = ['success' => 0, 'msg' => 'requires POST'];
 

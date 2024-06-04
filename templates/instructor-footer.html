@@ -8,11 +8,29 @@
         var _groups = JSON.parse('{{ $allocationgroups }}');
         var _choices = JSON.parse('{{ $studentchoices }}');
         var groupedChoices = {};
-	    var currentDate = new Date();
+        var currentDate = new Date();
         var today = currentDate.getFullYear() + '-' + ('0' + (currentDate.getMonth() + 1)).slice(-2) + '-' + ('0' + currentDate.getDate()).slice(-2);
         var originalReleaseDate = '';
 
-        if(_settings.length > 0 || _groups.length > 0 || _choices.length > 0) {
+	    // Check if there is a saved tab in localStorage and activate it
+        var activeTab = localStorage.getItem('activeTab');
+        if (activeTab) {
+            $('.nav-tabs a[href="' + activeTab + '"]').tab('show');
+            $('.navbar-nav li').removeClass('active');
+            $('.navbar-nav a[href="' + activeTab + '"]').parent('li').addClass('active');
+            $('.tab-pane').removeClass('in active');
+            $(activeTab).addClass('in active');
+        }
+
+        // Save the currently active tab to localStorage
+        $('.nav-tabs a, .navbar-nav a').on('shown.bs.tab', function(event) {
+            var tabID = $(event.target).attr('href');
+            localStorage.setItem('activeTab', tabID);
+            $('.navbar-nav li').removeClass('active');
+            $(event.target).parent('li').addClass('active');
+        });
+
+	    if(_settings.length > 0 || _groups.length > 0 || _choices.length > 0) {
             var details = _settings[0];
             var state = details.state;
             var releaseDate = details.release_date.split(' ')[0];
@@ -117,8 +135,10 @@
             event.preventDefault();
             var formData = new FormData(this);
             var emptyRows = false;
-	        var minSelections = $('#min-selections').val();
+            var minSelections = $('#min-selections').val();
             var maxSelections = $('#max-selections').val();
+
+            $('#btnSave').html('<span class="fas fa-spinner fa-spin"></span> Processing');
 
 	    
             if (validateForm()) {
@@ -129,10 +149,20 @@
                     contentType: false,
                     processData: false,
                     success: function(response) {
-                        location.reload();
+                        $('#statusModalLabel').html('<span class="fa fa-check-circle text-success fa-2x" aria-hidden="true"></span>');
+                        $('#statusMessage').html('<span class="fa fa-check-circle text-success fa-2x" aria-hidden="true"></span> Your changes were saved successfully.');
+                        $('#statusMessage').addClass('text-success');
+                        $('#statusModal').modal('show');
                     },
                     error: function(xhr, status, error) {
                         console.error(JSON.parse(xhr.responseText).error);
+                        $('#statusModalLabel').html('<span class="fas fa-circle-xmark text-danger fa-2x" aria-hidden="true"></span> Error');
+                        $('#statusMessage').text('There was an error processing the information.');
+                        $('#statusModal').modal('show');
+                    },
+                    complete: function() {
+                        $('#btnSave').prop('disabled', false);
+                        $('#btnSave').text('Save');
                     }
                 });
             }
@@ -146,27 +176,31 @@
         $('#run_allocation').click(function(event) {
             event.preventDefault();
 
+            $('#run_allocation').html('<span class="fas fa-spinner fa-spin"></span> Processing ...');
+            $('#run_allocation').prop('disabled', true);
+
             $.ajax({
                 url: '{{ $updatestate }}',
                 type: 'POST',
                 data:JSON.stringify({ "tool-state": "waiting" }),
                 contentType: 'application/json',
                 success: function(response) {
-                    location.reload();
-                    $("#run_allocation").hide();
                     $.ajax({
-			    url: 'scripts/check.pl',
-                	type: 'GET',
-                	success: function(response) {
-                    		console.log("check.pl executed successfully:", response);
-                	},
-                	error: function(xhr, status, error) {
-                    		console.error("Error calling check.pl:", xhr.responseText);
-                	}
+                        url: 'scripts/check.pl',
+                        type: 'GET',
+                        success: function(response) {
+                            console.log("check.pl executed successfully:", response);
+                            pollForCompletion();
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error calling check.pl:", xhr.responseText);
+                            $('#run_allocation').text("Run Allocation").prop('disabled', false);
+                        }
             	    });
                 },
                 error: function(xhr, status, error) {
                     console.error(JSON.parse(xhr.responseText).error);
+                    $('#run_allocation').text("Run Allocation").prop('disabled', false);
                 }
             });
         })
@@ -281,7 +315,7 @@
         $('#frmAssign').submit(function(event) {
             event.preventDefault();
             var formData = new FormData(this);
-            
+
             $.ajax({
                 url: '{{ $assign }}',
                 type: 'POST',
@@ -296,6 +330,27 @@
                 }
             });
         })
+
+        function pollForCompletion() {
+            $.ajax({
+                url: '{{ $state }}',
+                type: 'GET',
+                success: function(response) {
+                    if (typeof response === 'string') {
+                        response = JSON.parse(response);
+                    }
+
+                    if (response.success && response.success[0] && (response.success[0].state === "assigned" || response.success[0].state === "error")) {
+                        location.reload();
+                    } else {
+                        setTimeout(pollForCompletion, 5000);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error checking status:", xhr.responseText);
+                }
+            });
+        }
 
         function populateSettings(allocation_settings) {
             if (allocation_settings.length > 0) {
@@ -350,14 +405,14 @@
             });
 
             if (emptyRows) {
-                $('#error-message').html('<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> A title is required for all topics.');
+                $('#error-message').html('<span class="fa fa-exclamation" aria-hidden="true"></span> A title is required for all topics.');
                 $('#error-message').show();
 
                 return false;
             }
 
             if (minSelections > maxSelections) {
-                $('#selections-error').html('<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Min selections cannot be greater than Max selections.');
+                $('#selections-error').html('<span class="fa fa-exclamation" aria-hidden="true"></span> Min selections cannot be greater than Max selections.');
                 $('#selections-error').show();
                 $('#min-selections').addClass('has-error');
 
@@ -370,7 +425,7 @@
             }
 
             if (releaseDate > closingDtae) {
-                $('#dates-error').html('Release date cannot be later than closing date.');
+                $('#dates-error').html('<span class="fa fa-exclamation" aria-hidden="true"></span> Release date cannot be later than closing date.');
                 $('#dates-error').show();
                 $('#release-date').addClass('has-error');
                 return false;
@@ -449,6 +504,9 @@
             var groupedChoicesArray = Object.values(groupedChoices); 
             $('#tbl-allocation-choices tbody').html(tmpl('tmpl-selections', groupedChoicesArray));
             $('#tbl-user-memberships tbody').html(tmpl('tmpl-memberships', groupedChoicesArray));
+
+            var selectionsCount = groupedChoicesArray.length;
+            $('#selections').html('<span class="fas fa-poll-h" aria-hidden="true"></span> Selections (' + selectionsCount + ')');
 
             var hasNotAssigned = groupedChoicesArray.some(function(item) {
                 return item.allocated_group === 'Not assigned';

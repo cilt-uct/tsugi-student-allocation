@@ -39,7 +39,8 @@ $context = [
     'allocationsettings' => json_encode($allocation_settings),
     'allocationgroups' => json_encode($groups),
     'studentchoices' => json_encode($student_choices), 
-    'eid' => $user_eid, 
+    'eid' => $user_eid,
+    'state' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/check_state.php'))),
 ];
 
 if (!$USER->instructor) {

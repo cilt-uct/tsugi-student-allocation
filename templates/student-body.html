@@ -38,6 +38,24 @@
                         <button type="submit" id="btnSubmitChoices" name="btnSubmitChoices" class="btn btn-success pull-right">Submit Choices</button>
                         <b><span id="error-message" name="error-message" class="text-danger"></span></b>
                     </form>
+
+                    <div class="modal fade" id="statusModal" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close text-danger" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true" class="text-danger">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <h4 id="statusMessage"></h4>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-danger" data-dismiss="modal" id="closeModalButton">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
