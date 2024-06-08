@@ -182,7 +182,7 @@ class AllocationDAO {
 
             $query_arr = array(':project_id' => $project_id);
             $records = $this->PDOX->rowDie("SELECT count(distinct `choice`.`user_id`) as 'c'
-                                FROM allocation_choice `choice`
+                                FROM {$this->p}allocation_choice `choice`
                                 where `choice`.`project_id` = :project_id", $query_arr);
 
             $result['recordsTotal'] = $records['c'];
@@ -194,7 +194,7 @@ class AllocationDAO {
             }
 
             $records = $this->PDOX->rowDie("SELECT count(distinct `choice`.`user_id`) as 'c'
-                                FROM allocation_choice `choice`
+                                FROM {$this->p}allocation_choice `choice`
                                 left join allocation_user `all_user` on `all_user`.user_id = `choice`.`user_id`
                                 left join lti_user `user` on `user`.user_id = `choice`.`user_id`
                                 where `choice`.`project_id` = :project_id ". $search_query, $query_arr);
@@ -218,7 +218,7 @@ class AllocationDAO {
                     group_concat( concat(`choice`.choice_rank,'~',`choice`.group_id,'~', `choice`.`assigned`) order by `choice`.choice_rank) as 'choices',
                     '0' as 'assigned',
                     max(`choice`.`modified_at`) as 'modified_at'
-                FROM allocation_choice `choice`
+                FROM {$this->p}allocation_choice `choice`
                 left join allocation_user `all_user` on `all_user`.user_id = `choice`.`user_id`
                 left join lti_user `user` on `user`.user_id = `choice`.`user_id`
                 where `choice`.`project_id` = :project_id ". $search_query

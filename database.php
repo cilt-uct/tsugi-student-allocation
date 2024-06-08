@@ -79,10 +79,10 @@ $DATABASE_INSTALL = array(
         CONSTRAINT `fk_allocation_choice_lti_link1` FOREIGN KEY (`project_id`) REFERENCES `allocation_project` (`project_id`) ON DELETE CASCADE
         ) ENGINE=InnoDB;"
     ),
-    array( "{$CFG->dbprefix}allocation_choice",
+    array( "{$CFG->dbprefix}allocation_user",
         "CREATE TABLE `{$CFG->dbprefix}allocation_user` (
             `user_id` int NOT NULL,
-            `EID` varchar(10) NOT NULL,
+            `EID` varchar(99) NOT NULL,
             `role` int NOT NULL DEFAULT '0',
         PRIMARY KEY (`user_id`,`EID`),
         CONSTRAINT `fk_allocation_student_lti_user1` FOREIGN KEY (`user_id`) REFERENCES `lti_user` (`user_id`) ON DELETE CASCADE
