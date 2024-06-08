@@ -1,46 +1,85 @@
 <?php
 require_once "../config.php";
 include 'tool-config_dist.php';
+
 include 'src/Template.php';
 require_once "dao/AllocationDAO.php";
 
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
+# display All errors if in debug mode
+if ($tool['debug']) {
+    ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
+    error_reporting(E_ALL);
+}
 
 use \Tsugi\Core\LTIX;
+use \Tsugi\Core\Settings;
+use \Tsugi\UI\SettingsForm;
+
 use \Allocation\DAO\AllocationDAO;
 
 $LAUNCH = LTIX::requireData();
 
-$debug = 1;
 $menu = false;
 
-$site_id = $LAUNCH->ltiRawParameter('context_id','none');
-$user_eid = $LAUNCH->ltiRawParameter('user_id', 'none');
-$allocationDAO = new AllocationDAO($PDOX, $CFG->dbprefix, $tool);
+// This function does not work at this point in time (2024-06-06)
+// So we have slight work around - later this can be implemented when it works again
+// $hasRosters = LTIX::populateRoster(true, true, null);
+const ROLE_LEARNER = 0;
+const ROLE_INSTRUCTOR = 1000;
 
-$allocation_settings = $allocationDAO->getSettings($LINK->id,$site_id);
-$groups = $allocationDAO->getGroups($LINK->id);
-$student_choices = $allocationDAO->getChoices($LINK->id);
-$tool_id = $LINK->id;
+$site_id = $LAUNCH->ltiRawParameter('context_id','none');
+$EID = $LAUNCH->ltiRawParameter('ext_d2l_username', $LAUNCH->ltiRawParameter('lis_person_sourcedid', $LAUNCH->ltiRawParameter('ext_sakai_eid', $USER->id)));
+
+$allocationDAO = new AllocationDAO($PDOX, $CFG->dbprefix, $LINK->id, $site_id, $USER->id, $EID, 1000);
+
+// In future this might be mulitple projects per site.
+$current_project = $allocationDAO->getProject();
+$groups = $allocationDAO->getGroups($current_project['project_id']);
+
+$records = $PDOX->allRowsDie("SELECT ifnull(count(distinct `choice`.`user_id`),0) as 'c'
+    FROM {$CFG->dbprefix}allocation_choice `choice`
+    where `choice`.`project_id` = :project_id", array(':project_id' => $current_project['project_id']));
+$no_users = $records[0]['c'];
+
+/*
+const ROLE_LEARNER = 0;
+const ROLE_INSTRUCTOR = 1000;
+*/
 
 $context = [
     'instructor' => $USER->instructor,
-    'styles' => [addSession('static/css/app.min.css'), addSession('static/css/custom.css')],
-    'scripts' => [addSession('static/js/app.js'),  addSession('static/js/Sortable.min.js')],
-    'debug' => $debug,
+    'styles' => [addSession('static/css/app.min.css'), addSession('static/css/custom.css'),
+                    addSession('static/css/jquery-msgpopup.css'),
+                    addSession('static/css/datatables.min.css'),
+                    addSession('static/css/dataTables.bootstrap4.min.css'),
+                    addSession('static/third-party/trumbowyg/ui/trumbowyg.min.css'),
+                    addSession('static/third-party/trumbowyg/plugins/mention/ui/trumbowyg.mention.min.css')],
+    'scripts' => [addSession('static/js/app.js'),
+                    addSession('static/js/moment.min.js'),
+                    addSession('static/js/jquery-msgpopup.js'),
+                    addSession('static/js/datatables.min.js'),
+                    addSession('static/js/Sortable.min.js'),
+                    addSession('static/third-party/trumbowyg/trumbowyg.min.js'),
+                    addSession('static/third-party/trumbowyg/plugins/mention/trumbowyg.mention.min.js')],
+    'debug' => $tool['debug'],
+
+    'current_project' => $current_project,
+    'state' => isset($current_project['state']) ? $current_project['state'] : 'open',
+
+    'allocation_groups' => $groups,
+    'participants' => $no_users,
+
+    'configure_url' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/set_configure.php'))),
+    'get_student_selections_url' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/get_student_selections.php'))),
+
+    /////////////////////
     'allocate' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('scripts/perl.php'))),
-    'configure' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/configure.php'))),
+
     'updatestate' =>addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/set_state.php'))),
     'assign' =>addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/assign.php'))),
     'checkwaitingsites' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('scripts/check.pl'))),
-    'toolid' => $tool_id,
-    'allocationsettings' => json_encode($allocation_settings),
-    'allocationgroups' => json_encode($groups),
-    'studentchoices' => json_encode($student_choices), 
-    'eid' => $user_eid,
-    'state' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/check_state.php'))),
+    'get_state_url' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/check_state.php'))),
 ];
 
 if (!$USER->instructor) {

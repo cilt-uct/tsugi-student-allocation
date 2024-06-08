@@ -2,126 +2,60 @@
     <script src="{{$script}}" type="text/javascript"></script>
 {% endforeach; %}
 
-<script type="text/javascript">  
+<script type="text/javascript">
     var selectedChoices = [];
     var currentDate = new Date();
     var today = currentDate.getFullYear() + '-' + ('0' + (currentDate.getMonth() + 1)).slice(-2) + '-' + ('0' + currentDate.getDate()).slice(-2);
 
-    $(document).ready(function(){
-        var _settings = JSON.parse('{{$allocationdetails}}');
-        var _options = JSON.parse('{{$allocationgroups}}');
-        var _choices = JSON.parse('{{$selectedgroups}}');
-   
-        if(_settings.length > 0 || _options.length > 0 || _choices.length > 0) {
-            var details = _settings[0];
-	        var releaseDate = details.release_date.split(' ')[0];
-            var closingDate = details.closing_date.split(' ')[0];
-	        var assignedGroup = _choices.find(choice => choice.assigned === 1);
-            var state = _settings[0].state;
+    $(document).ready(function() {
+        var _settings = {{ json_encode($allocation_settings) }};
+        var _options = {{ json_encode($allocation_groups) }};
+        var _choices = {{ json_encode($selected_groups) }};
 
-	        $('#tool-title').html(details.name);
-	   
-	        // Check if the tool is released
-            if (today < releaseDate) {
-                window.location.href = 'coming-soon.php';
-            } else {
-                // Check if groups or projects are set
-                if (_options.length > 0) {
-                    $('#instructions').html(tmpl('tmpl-settings', details));
-                    $('#tblGroups tbody').html(tmpl('tmpl-option-row', { details: details, choices: _choices, options: _options }));
-                    
-		            // Check if the student is already assigned to a group or project
-                    if (assignedGroup) {
-                        $('#assigned_div').html(tmpl('tmpl-assigned-to', assignedGroup));
-                        $('#assigned_div').show();
-                        $('#tblGroups select').attr("disabled", "disabled");
-                        $('#btnSubmitChoices, #divInstructions').hide();
-                    }
-
-		            // Check if allocation is in progress and disable project selection
-                    if (state === "waiting") {
-                        $('#frmSubmitChoices').find('select, button').prop('disabled', true);
-                        $('#btnSubmitChoices').hide();
-                    }
-
-                    // Check if allocation is complete
-                    if (state === "assigned") {
-                        $('#tblGroups select').attr('disabled', "disabled");
-                        $('#btnSubmitChoices').hide();
-                    }
-
-                    $('#tool-details').show();
-                } else {
-                    window.location.href = 'coming-soon.php';
-                }
-            }
-
-            // Check if expiry date reached or passed
-            if(today > closingDate) {
-                $('#frmSubmitChoices').find('select, button').prop('disabled', true);
-                $('#btnSubmitChoices').hide();
-            }
-	    }else {
-            window.location.href = 'coming-soon.php';
-        }
+        $('#tblGroups tbody').html(tmpl('tmpl-option-row', { settings: _settings, choices: _choices, options: _options }));
 
         $('#frmSubmitChoices').submit(function(event) {
             event.preventDefault();
-            var formData = new FormData(this);
-            var selectedCount = $('.project-selection').filter(function() {
-                return $(this).val() !== '';
-            }).length;
+            event.stopPropagation();
 
-            if (selectedCount < details.min_selections) {
-                $('#error-message').html('<span class="fa fa-exclamation" aria-hidden="true"></span> Please select at least ' + details.min_selections + ' option(s) before submission.');
-                return; 
-            } else {
-                $('#error-message').html(''); 
-                $('#error-message').hide();
-            }
+            const _form = $('#frmSubmitChoices'),
+                  _btn  = $('#btnSubmitChoices'),
+                  _data = new FormData(this);
 
+            // for (var [key, value] of _data.entries()) {
+            //     console.log(key + ': ' + value);
+            // }
+
+            _btn.html('<i class="fa fa-cog fa-spin"></i>&nbsp;&nbsp;Saving ...').addClass('disabled').attr('disabled', true);
             $.ajax({
-                url: '{{ $addchoices }}',
+                url: '{{ $add_choice_url }}',
                 type: 'POST',
-                data: formData,
-                contentType: false,
+                data: _data, dataType: 'json',
                 processData: false,
-                success: function(response) {
-                    $('#statusMessage').html('<span class="fa fa-check-circle text-success fa-2x" aria-hidden="true"></span> Your choices were saved successfully.');
-                    $('#statusMessage').addClass('text-success');
-                    $('#statusModal').modal('show');
-                },
-                error: function(xhr, status, error) {
-                    console.error(error);
-                    $('#statusModalLabel').html('<span class="fas fa-circle-xmark text-danger fa-2x" aria-hidden="true"></span> An error occurred while processing your submission. Please try again later.');
-                    $('#statusMessage').text('There was an error processing the information.');
-                    $('#statusModal').modal('show');
+                contentType: false,
+            }).done(function(data) {
+                if (data['success'] == 1) {
+                    $().msgpopup({
+                        text: 'Your choices were saved successfully.',
+                        type: 'success',
+                        time: 2000
+                    });
+                } else {
+                    $().msgpopup({
+                        text: data['msg'],
+                        type: 'error',
+                        time: 5000
+                    });
                 }
+            }).fail(function() {
+                $().msgpopup({
+                    text: 'An error occurred while processing your submission. Please try again later.',
+                    type: 'error',
+                    time: 5000
+                });
+            }).always(function() {
+                _btn.html('Submit Choices').removeClass('disabled').attr('disabled', false);
             });
         });
-    
-        $('.project-selection').change(function() {
-            updateChoices(this);
-        })
-
-        $('#closeModalButton').click(function() {
-            location.reload();
-        });
-
     });
-
-    function updateChoices(select) {
-        var selectedChoice = select.value;
-        var rowIndex = $(select).closest('tr').index();
-
-        $(select).closest('tbody').find('.project-selection').each(function() {
-            if (this !== select) {
-                var choice = $(this).val();
-                if (choice === selectedChoice) {
-                    $(this).val('');
-                }
-            }
-        });
-    }
-
 </script>

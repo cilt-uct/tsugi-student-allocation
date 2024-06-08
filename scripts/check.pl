@@ -68,21 +68,21 @@ foreach my $site (@waiting_sites) {
 
     # Retrieve student choices for this site
     my $choices_query = "
-        SELECT `choice`.*, 
-               `group`.`group_name` AS `group_name`, 
-               `group`.`group_size` AS `group_size`, 
+        SELECT `choice`.*,
+               `group`.`group_name` AS `group_name`,
+               `group`.`group_size` AS `group_size`,
                `user`.`displayname` AS `user_name`
         FROM `allocation_choice` AS `choice`
         LEFT JOIN `allocation_group` AS `group` ON `choice`.`group_id` = `group`.`group_id`
         LEFT JOIN `lti_user` AS `user` ON `choice`.`user_id` = `user`.`user_id`
-        WHERE `choice`.`link_id` = ? 
+        WHERE `choice`.`link_id` = ?
     ";
 
     my $choices_stmt = $db->prepare($choices_query)
         or die "Prepare choices_stmt: " . $db->errstr;
     $choices_stmt->execute($link_id)
         or die "Exec choices_stmt: " . $choices_stmt->errstr;
-    
+
     my @student_choices;
     while (my $choice = $choices_stmt->fetchrow_hashref) {
         push @student_choices, $choice;
@@ -94,8 +94,8 @@ foreach my $site (@waiting_sites) {
 
     # Retrieve groups for this site
     my $groups_query = "
-        SELECT * 
-	FROM `allocation_group`
+        SELECT *
+    FROM `allocation_group`
         WHERE `link_id` = ?
         ORDER BY `group_id` ASC
     ";
@@ -129,41 +129,41 @@ foreach my $site (@waiting_sites) {
     if ($? == 0) {
         print "Successfully called perl.php for site_id: $site_id\n";
 
-	my $assignments_json;
+    my $assignments_json;
 
-	# Extract assignments JSON array from $output
-	if ($output =~ /(\[.*\])\s*$/) {
-    	    $assignments_json = $1;
-	} else {
-    	    warn "No assignments array found at the end of the output";
-	}
+    # Extract assignments JSON array from $output
+    if ($output =~ /(\[.*\])\s*$/) {
+            $assignments_json = $1;
+    } else {
+            warn "No assignments array found at the end of the output";
+    }
 
-	
-	my $assignments;
 
-	eval {
-		$assignments = decode_json($assignments_json);
-	};
+    my $assignments;
 
-	if ($@) {
-    		warn "Error decoding JSON: $@";
-	} else {
-    		if ($assignments && @$assignments) {
-        	    # Begin transaction
-        	    $db->begin_work;
+    eval {
+        $assignments = decode_json($assignments_json);
+    };
 
-		    # Process assignments and insert into database
-    		    foreach my $assignment (@$assignments) {
-        	        my $student_id = $assignment->{'student_id'};
+    if ($@) {
+            warn "Error decoding JSON: $@";
+    } else {
+            if ($assignments && @$assignments) {
+                # Begin transaction
+                $db->begin_work;
+
+            # Process assignments and insert into database
+                foreach my $assignment (@$assignments) {
+                    my $student_id = $assignment->{'student_id'};
                         my $assigned_group = $assignment->{'assigned_group'};
-    
-		    
-                    # Skip the "UNASSIGNED" entry
-        	    next if $student_id eq 'UNASSIGNED:';
 
-		    $student_id =~ s/^s//;
-		    $assigned_group =~ s/^p//;
-		    my $existing_assigned_group = get_assigned_group($link_id, $student_id);
+
+                    # Skip the "UNASSIGNED" entry
+                next if $student_id eq 'UNASSIGNED:';
+
+            $student_id =~ s/^s//;
+            $assigned_group =~ s/^p//;
+            my $existing_assigned_group = get_assigned_group($link_id, $student_id);
 
                     # If there's already an assigned group, reset it to 0
                     if ($existing_assigned_group) {
@@ -180,19 +180,19 @@ foreach my $site (@waiting_sites) {
                     }
 
                     # Insert assignment into database
-		    my $insert_query = "
-        		UPDATE allocation_choice
-        		SET assigned = 1, modified_by = ?, modified_at = ?
-        		WHERE link_id = ? AND user_id = ? AND group_id = ?
-    		    ";
-    		    
-		    my $insert_stmt = $db->prepare($insert_query)
-        	    	or die "Prepare insert_stmt: " . $db->errstr;
-    		    $insert_stmt->execute('script', $current_timestamp, $link_id, $student_id, $assigned_group)
-        	    	or die "Exec insert_stmt: " . $insert_stmt->errstr;
-    		    $insert_stmt->finish();
-    		}
-		# Update the state of the site
+            my $insert_query = "
+                UPDATE allocation_choice
+                SET assigned = 1, modified_by = ?, modified_at = ?
+                WHERE link_id = ? AND user_id = ? AND group_id = ?
+                ";
+
+            my $insert_stmt = $db->prepare($insert_query)
+                    or die "Prepare insert_stmt: " . $db->errstr;
+                $insert_stmt->execute('script', $current_timestamp, $link_id, $student_id, $assigned_group)
+                    or die "Exec insert_stmt: " . $insert_stmt->errstr;
+                $insert_stmt->finish();
+            }
+        # Update the state of the site
         my $update_site_query = "
             UPDATE allocation_site
             SET state = 'assigned'
@@ -208,11 +208,11 @@ foreach my $site (@waiting_sites) {
         # Commit transaction
         $db->commit;
     }
-	}
+    }
     } else {
         warn "Failed to call perl.php for site_id: $site_id. Error:  $output\n";
 
-	# Revert the state back to 'waiting' since the call to perl.php failed
+    # Revert the state back to 'waiting' since the call to perl.php failed
         my $error_stmt = $db->prepare("UPDATE allocation_site SET state = 'error' WHERE site_id = ? AND link_id = ?")
             or die "Prepare revert_stmt: " . $db->errstr;
         $error_stmt->execute($site_id, $link_id)

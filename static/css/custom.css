@@ -64,7 +64,7 @@ ul.nav li {
     margin-top: -8px;
 }
 
-a.glyphicon:hover, 
+a.glyphicon:hover,
 a.glyphicon:active {
     text-decoration: none;
 }
@@ -191,7 +191,7 @@ ul li:last-child {
 
 .not-required::before {
   content: "*";
-  padding: 0rem 0.6rem;
+  /* padding: 0rem 0.6rem; */
   font-weight: bold;
   color: rgb(255,255,255);
 }
@@ -206,7 +206,6 @@ ul li:last-child {
   text-align: center;
 }
 
-#tblGroupsList tbody input[type="text"],
 #tblGroupsList tbody input[type="number"] {
   margin: 0 auto;
   display: block;
@@ -256,10 +255,6 @@ ul li:last-child {
   margin-bottom: 3.125rem;
 }
 
-/* label {
-  margin-top: 10px;
-} */
-
 #tsugi_tool_nav_bar .navbar-nav > .active > a {
   color: purple;
   font-weight: bold;
@@ -280,10 +275,79 @@ ul li:last-child {
 .table-rounded thead th:last-child {
   border-top-right-radius: 15px;
 }
-.table-rounded tbody tr:last-child td:first-child {
-  border-bottom-left-radius: 15px;
+
+
+.table td.group-id-cell span.error {
+  color: #a94442;
 }
-.table-rounded tbody tr:last-child td:last-child {
-  border-bottom-right-radius: 15px;
+
+.table td .alert {
+  margin-bottom: 0px;
 }
-  
+
+#btnCancel {
+  font-size: 1.2rem;
+  display: inline-block;
+  padding: 0.6rem 1.8rem;
+  text-decoration: underline;
+}
+
+#btnCancel:hover, #btnCancel:active {
+  color: var(--primary-menu);
+}
+
+.label-top {
+  padding-left: 10px;
+}
+
+.label-top input {
+  margin-top: 5px
+}
+
+.label-top input {
+  margin-bottom: 1.4rem;
+  margin-right: 0px;
+  height: 2.8rem;
+}
+
+.label-top label {
+  margin-left: 8px;
+  font-weight: lighter;
+  position: absolute;
+  margin-top: -10px;
+  background: #fff;
+  padding: 0 5px;
+}
+
+.csstooltip {
+  display: inline;
+  position: relative;
+}
+
+.csstooltip:hover:after{
+  display: -webkit-flex;
+  display: flex;
+  -webkit-justify-content: center;
+  justify-content: center;
+  background: rgb(68, 68, 68, 0.8);
+  border-radius: 8px;
+  color: #fff;
+  content: attr(title);
+  font-size: 1rem;
+  padding: 0.5rem;
+  width: 220px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -116%);
+}
+.csstooltip:hover:before{
+  border: solid;
+  border-color: rgb(68, 68, 68, 0.8) transparent;
+  border-width: 12px 6px 0 6px;
+  content: "";
+  left: 50%;
+  top: 50%;
+  position: absolute;
+  transform: translate(-18%, -175%);
+}

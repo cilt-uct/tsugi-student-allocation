@@ -7,20 +7,20 @@ function getOption(_arr, _id) { return getObj(_id, _arr, 'id'); }
 (function($) {
     "use strict";
 
-	$.fn.student_selection = function(options) {
-		var settings = $.extend({
+    $.fn.student_selection = function(options) {
+        var settings = $.extend({
             path: ""
         }, options || {});
         this.settings = settings;
 
         var self = $.extend(this, {
-			init: function() {
+            init: function() {
 
             }
         });
 
         self.init();
-		self.data('welcome', self);
+        self.data('welcome', self);
         return self;
     };
 });

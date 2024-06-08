@@ -1,42 +1,33 @@
-<script type="text/x-tmpl" id="tmpl-settings">
-    {% var closingDate = o.closing_date.split(' ')[0];%}
-    {% if(o.instructions) { %}
-        <span id="special_instructions">{%=o.instructions%}</span><br/><br/>
-    {% } %}
-
-    {% if(o.groups_doc) { %}
-        <p>If you would like to see the projects, please see the <b><a href="{%=o.groups_doc%}" title="Project Info">Project Information</a></b> booklet.</p><br/>
-    {% } %}
-   
-    <p>From the list of topics below, identify potential topics that appeal to you. It is important to 
-        select <b>at least {%=o.min_selections%} and up to {%=o.max_selections%} choices</b> for 
-        the electronic selection process. If you fail to make selections, you will be randomly allocated 
-        to a topic. Please make your choices in <b><span class="text-danger">order of preference</span>.</b>
-    </p>
-    <blockquote class="bg-info">The deadline for selections is <b>{%=closingDate%}</b>.</blockquote>
-</script>
-<script type="text/x-tmpl" id="tmpl-assigned-to">
-	<h3>Assigned to </h3>
-	<p><b>{%=o.group_id%} - {%=o.group_name%}</b></br/></p>
-</script>
 <script type="text/x-tmpl" id="tmpl-option-row">
-    {% for (var i = 1; i <= o.details.max_selections; i++) { %}
-        {% var selectId = 'select_' + i; %}
-        {% var rowId = 'row_' + i; %}
+
+    {% if (o.options.length > 0) {
+        for (var i = 1; i <= Math.min(o.settings.max_selections, o.options.length); i++) {
+            var selectId = 'select_' + i;
+            var rowId = 'row_' + i; %}
         <tr>
-            <td class="text-center">
+            <td class="text-center" style="vertical-align: middle; font-size: 1.4rem; font-weight: bold;">
                 <input type="hidden" id="choice-number[]" name="choice-number[]" value="{%= i %}" />
                 {%= i %}
             </td>
             <td>
-                <select class="form-control project-selection" data-id="{%= selectId %}" name="project-selection[]" data-row="{%= rowId %}">
+                <select class="form-control project-selection"
+                    data-id="{%= selectId %}" name="project-selection[]" data-row="{%= rowId %}">
                     <option value="">Select</option>
                     {% o.options.forEach(function(group) { %}
-                        {% var choiceForLevel = o.choices.find(choice => choice.choice_id === i); %}
+                        {% var choiceForLevel = o.choices.find(c => c.choice_rank === i); %}
                         {% var isSelected = choiceForLevel && choiceForLevel.group_id === group.group_id ? 'selected' : ''; %}
-                        <option value="{%= group.group_id %}" {%= isSelected %}>{%= group.group_id %}: {%= group.group_name %}</option>
+                        <option value="{%= group.group_id %}" {%= isSelected %}>
+                            {%= group.group_id %}: {%= group.group_name %}
+                        </option>
                     {% }); %}
                 </select>
+            </td>
+        </tr>
+        {% }
+    } else { %}
+        <tr>
+            <td colspan="2" style="text-align: center; font-size: 1.2rem; padding: 1.2rem; color: var(--text-light);">
+                The options have not been configured yet. Please check back later.
             </td>
         </tr>
     {% } %}

@@ -1,113 +1,147 @@
 {% foreach($scripts as $script): %}
     <script src="{{$script}}" type="text/javascript"></script>
 {% endforeach; %}
-
-<script type="text/javascript">    
+<script type="text/javascript">
+    function postResize() {
+        parent.postMessage(JSON.stringify({
+            subject: "iframeResize",
+            width:  window.innerWidth,
+            height: window.innerHeight
+        }), "*");
+    }
+    window.onresize = postResize;
+</script>
+<script type="text/javascript">
     $(document).ready(function(){
-        var _settings = JSON.parse('{{ $allocationsettings }}');
-        var _groups = JSON.parse('{{ $allocationgroups }}');
-        var _choices = JSON.parse('{{ $studentchoices }}');
-        var groupedChoices = {};
-        var currentDate = new Date();
-        var today = currentDate.getFullYear() + '-' + ('0' + (currentDate.getMonth() + 1)).slice(-2) + '-' + ('0' + currentDate.getDate()).slice(-2);
-        var originalReleaseDate = '';
+        let _groups = {{ json_encode($allocation_groups) }};
 
-	    // Check if there is a saved tab in localStorage and activate it
-        var activeTab = localStorage.getItem('activeTab');
-        if (activeTab) {
-            $('.nav-tabs a[href="' + activeTab + '"]').tab('show');
-            $('.navbar-nav li').removeClass('active');
-            $('.navbar-nav a[href="' + activeTab + '"]').parent('li').addClass('active');
-            $('.tab-pane').removeClass('in active');
-            $(activeTab).addClass('in active');
-        }
+    // Top Form ///////////////////////////////////////////////////////////////////////////////
+        $('#help_dates').on('click', function(event){ event.preventDefault(); });
 
-        // Save the currently active tab to localStorage
-        $('.nav-tabs a, .navbar-nav a').on('shown.bs.tab', function(event) {
-            var tabID = $(event.target).attr('href');
-            localStorage.setItem('activeTab', tabID);
-            $('.navbar-nav li').removeClass('active');
-            $(event.target).parent('li').addClass('active');
+        // init html editor
+        $('#instructions').trumbowyg({
+            btns: [
+                ['viewHTML'],
+                ['undo', 'redo'], // Only supported in Blink browsers
+                ['formatting'],
+                ['strong', 'em', 'del'],
+                ['superscript', 'subscript'],
+                ['link'],
+                ['justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'],
+                ['unorderedList', 'orderedList'],
+                ['horizontalRule'],
+                ['removeformat'],
+                ['mention'],
+                ['fullscreen']
+            ],
+            plugins: {
+                mention: {
+                    source: [
+                        {part: '{(ReleaseDate)}', name: 'Release Date'},
+                        {part: '{(ClosingDate)}', name: 'Closing Date'},
+                        {part: '{(SelectMin)}', name: 'Student Selection Minimum'},
+                        {part: '{(SelectMax)}', name: 'Student Selection Maximum'},
+                    ],
+                    formatDropdownItem: function (item) {
+                        return item.name;
+                    },
+                    formatResult: function (item) {
+                        return item.part;
+                    }
+                }
+            }
         });
 
-	    if(_settings.length > 0 || _groups.length > 0 || _choices.length > 0) {
-            var details = _settings[0];
-            var state = details.state;
-            var releaseDate = details.release_date.split(' ')[0];
-            var closingDate = details.closing_date.split(' ')[0];
-            var selections = [];
-            var columnIndex = 1;
-            originalReleaseDate = releaseDate;
+        function checkAndSwapDates() {
+            var releaseValue = $('#release-date').val();
+            var closingValue = $('#closing-date').val();
+            console.log(`releaseValue: ${releaseValue}`);
+            console.log(`closingValue: ${closingValue}`);
 
-	        $('#tool-title').html(details.name);
-            $('#tblGroupsList tbody').empty();
-            populateSettings(_settings);
-            _groups.forEach(function(group) {
-                var avail_spaces = group.group_size;
-                var num_students = 0;
-                _choices.forEach(function(choice) {
-                    if (choice.assigned === 1 && choice.group_id === group.group_id) {
-                        avail_spaces--;
-                        num_students++;
-                    }
-                });
-
-                group.avail_spaces = avail_spaces;
-                group.num_students = num_students;
-            });
-
-            $('#tblGroupsList tbody').html(tmpl('tmpl-options', _groups));
-
-            if (state === "waiting") {
-                $('#frmAddGroups, #tblGroupsList').find('input, select, textarea').prop('readonly', true);
-                $('#frmAddGroups, #tblGroupsList').find('button').prop('disabled', true);
-                $('#tblGroupsList th:nth-child(' + (columnIndex + 5) + ')').hide();
-                $('#tblGroupsList td:nth-child(' + (columnIndex + 5) + ')').hide();
-                $('#btnCancel, #btnSave, #btnAddRow, #run_allocation').hide();
-                $('#tblGroupsList .delete-row').hide();
-                $('#tblGroupsList tbody td').removeClass('group-id-cell');
-            } 
-            else if (state === "assigned") {
-                $("#divMemberships").show();
-                $("#divSelections").hide();
-                $('#tblGroupsList th:nth-child(' + (columnIndex + 5) + ')').hide();
-                $('#tblGroupsList td:nth-child(' + (columnIndex + 5) + ')').hide();
-                $('#tblGroupsList .delete-row').hide();
-                $('#btnCancel, #btnSave, #btnAddRow, #run_allocation').hide();
-                $('#frmAddGroups, #tblGroupsList').find('input, select, textarea, button').prop('readonly', true);
-                $('#tblGroupsList tbody td').removeClass('group-id-cell');
-            }
-
-            if(today > closingDate) {
-                $('#frmAddGroups, #tblGroupsList').find('input, select, textarea, button').each(function() {
-                    var id = $(this).attr('id');
-                    $('#tblGroupsList tbody td').removeClass('group-id-cell');
-                    if (id !== 'closing-date' && id !== 'instructions' && id !== 'btnSave') {
-                        $(this).prop('readonly', true);
-                    }
-                });
-
-                $(' #btnAddRow').hide();
-                $('#tblGroupsList .delete-row').hide();
-                $('#tblGroupsList th:last-child, #tblGroupsList td:last-child').hide();
-            }
-
-            $("#tblGroupsList tbody").sortable({
-                items: 'tr',
-                dropOnEmpty: false,
-                start: function (G, ui) {
-                    ui.item.addClass("select");
-                },
-                stop: function (G, ui) {
-                    ui.item.removeClass("select");
-                    updateGroupIds();
+            if (releaseValue && closingValue) {
+                var releaseDate = new Date(releaseValue);
+                var closingDate = new Date(closingValue);
+                if (releaseDate > closingDate) {
+                    // Swap the dates
+                    $('#release-date').val(closingDate.toISOString().split('T')[0]);
+                    $('#closing-date').val(releaseDate.toISOString().split('T')[0]);
+                } else if (releaseDate == closingDate) {
+                    releaseDate.setDate(releaseDate.getDate() - 1);
+                    $('#release-date').val(releaseDate.toISOString().split('T')[0]);
                 }
+            }
+        }
+
+        $('#release-date, #closing-date').change(function() {
+            checkAndSwapDates();
+        });
+
+        function checkAndSwapNumbers() {
+            var minValue = parseFloat($('#min-selections').val());
+            var maxValue = parseFloat($('#max-selections').val());
+
+            if (minValue > maxValue) {
+                // Swap the numbers
+                $('#min-selections').val(maxValue);
+                $('#max-selections').val(minValue);
+            }
+        }
+
+        $('#min-selections, #max-selections').change(function() {
+            checkAndSwapNumbers();
+        });
+
+    // Group Functions ////////////////////////////////////////////////////////////////////////
+        function addRow(group) {
+            var projectId = $('#tblGroupsList tbody tr').length + 1;
+            projectId = ("000" + projectId).slice(-3);
+
+            $('#tblGroupsList tbody').append(tmpl('tmpl-option-row',
+                {'group_id': projectId, 'group_name': '', 'group_size': 1, 'num_students': 0, 'avail_spaces': 1, 'state': '{{$state}}'}
+            ));
+
+            updateGroupIds();
+        }
+
+        function updateGroupIds() {
+            $('#tblGroupsList tbody tr').each(function(index) {
+                var newGroupId = ("000" + (index + 1)).slice(-3);
+                $(this).find('.group-id-cell span').text(newGroupId);
+                $(this).find('.group-id-cell input').val(newGroupId);
+            });
+        }
+
+        // Load initial setup
+        _groups.forEach(function(group) {
+                // var avail_spaces = group.group_size;
+                // var num_students = 0;
+                // _choices.forEach(function(choice) {
+                //     if (choice.assigned === 1 && choice.group_id === group.group_id) {
+                //         avail_spaces--;
+                //         num_students++;
+                //     }
+                // });
+
+                // group.avail_spaces = avail_spaces;
+                // group.num_students = num_students;
+                group.state = '{{$state}}';
             });
 
-            populateSelections(_choices);
-            checkTable();
-        }
-       
+        $('#tblGroupsList tbody').html(tmpl('tmpl-options', _groups));
+
+        // Make sortable
+        $("#tblGroupsList tbody").sortable({
+            items: 'tr',
+            dropOnEmpty: false,
+            start: function (G, ui) {
+                ui.item.addClass("select");
+            },
+            stop: function (G, ui) {
+                ui.item.removeClass("select");
+                updateGroupIds();
+            }
+        });
+
         $('#btnAddRow').click(function(event) {
             event.preventDefault();
             addRow({ id: '', group_name: '', size: '', num_students: '', avail_spaces: '' });
@@ -116,435 +150,155 @@
         $(document).on('click', '#tblGroupsList tbody .delete-row', function(event) {
             event.preventDefault();
             const row = $(this).closest('tr');
-    	    row.remove();
-        
-	        updateGroupIds();
+            row.remove();
+
+            updateGroupIds();
         });
 
-        $('#release-date').on('change', function() {
-            if ($(this).val() !== originalReleaseDate) {
-                $(this).attr('min', today);
+    // Form Submition /////////////////////////////////////////////////////////////////////////
+        function validateForm() {
+            groups = $('#tblGroupsList tbody tr').map(function(index, row) {
+                    return {
+                        'id': $(row).find("input[name='group-id[]']").val().trim(),
+                        'title': $(row).find("input[name='group-title[]']").val().trim(),
+                        'size': $(row).find("input[name='group-size[]']").val().trim()
+                    }
+                }).get();
+
+            let empty_title = groups.filter(function(i) { return i.title===""; }),
+                empty_size = groups.filter(function(i) { return i.size <=0 ; });
+
+            if (empty_title.length > 0) {
+                $('#error-groups').html(tmpl('tmpl-error-msg', {'msg': 'A title is required for all topics.'}));
+                $.each(empty_title, function(i, el) { $(`td.group-id-cell span[data-id="${el['id']}"]`).addClass('error'); });
             } else {
-                $(this).removeAttr('min');
+                $(`td.group-id-cell span`).removeClass('error');
+                $('#error-groups').html('');
             }
-        });
 
-        $('#release-date').val(originalReleaseDate);
+            // release is always before closing
+            checkAndSwapDates();
+
+            // set min and max selection values
+            checkAndSwapNumbers();
+
+            // NOT the errors
+            return !(empty_title.length > 0); // additional checks can be added later
+        }
 
         $('#frmAddGroups').submit(function(event) {
             event.preventDefault();
-            var formData = new FormData(this);
-            var emptyRows = false;
-            var minSelections = $('#min-selections').val();
-            var maxSelections = $('#max-selections').val();
+            event.stopPropagation();
 
-            $('#btnSave').html('<span class="fas fa-spinner fa-spin"></span> Processing');
+            const _form = $('#frmAddGroups'),
+                  _btn  = $('#btnSave'),
+                  _data = new FormData(this);
 
-	    
             if (validateForm()) {
+                _btn.html('<i class="fa fa-cog fa-spin"></i>&nbsp;&nbsp;Updating ...').addClass('disabled').attr('disabled', true);
+
                 $.ajax({
-                    url: '{{ $configure }}',
+                    url: '{{ $configure_url }}',
                     type: 'POST',
-                    data: formData,
-                    contentType: false,
+                    data: _data, dataType: 'json',
                     processData: false,
-                    success: function(response) {
-                        $('#statusModalLabel').html('<span class="fa fa-check-circle text-success fa-2x" aria-hidden="true"></span>');
-                        $('#statusMessage').html('<span class="fa fa-check-circle text-success fa-2x" aria-hidden="true"></span> Your changes were saved successfully.');
-                        $('#statusMessage').addClass('text-success');
-                        $('#statusModal').modal('show');
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(JSON.parse(xhr.responseText).error);
-                        $('#statusModalLabel').html('<span class="fas fa-circle-xmark text-danger fa-2x" aria-hidden="true"></span> Error');
-                        $('#statusMessage').text('There was an error processing the information.');
-                        $('#statusModal').modal('show');
-                    },
-                    complete: function() {
-                        $('#btnSave').prop('disabled', false);
-                        $('#btnSave').text('Save');
+                    contentType: false,
+                }).done(function(data) {
+                    if (data['success'] == 1) {
+                        $().msgpopup({
+                            text: 'Topic updated',
+                            type: 'success',
+                            time: 2000
+                        });
+                    } else {
+                        $().msgpopup({
+                            text: data['msg'],
+                            type: 'error',
+                            time: 5000
+                        });
                     }
+                }).fail(function() {
+                    $().msgpopup({
+                        text: 'Could not update topic',
+                        type: 'error',
+                        time: 5000
+                    });
+                }).always(function() {
+                    _btn.html('Update Topic').removeClass('disabled').attr('disabled', false);
+                });
+
+            } else {
+                $().msgpopup({
+                    text: 'There are some errors in the form.',
+                    type: 'error',
+                    time: 5000
                 });
             }
         });
 
         $('#frmAddGroups #btnCancel').click(function(event) {
             event.preventDefault();
-	        location.reload();
+            location.reload();
         });
 
-        $('#run_allocation').click(function(event) {
-            event.preventDefault();
-
-            $('#run_allocation').html('<span class="fas fa-spinner fa-spin"></span> Processing ...');
-            $('#run_allocation').prop('disabled', true);
-
-            $.ajax({
-                url: '{{ $updatestate }}',
+    // Student Selections /////////////////////////////////////////////////////////////////////
+        let student_table = new DataTable('#tbl-allocation-choices', {
+            ajax: {
+                url: '{{ $get_student_selections_url }}',
                 type: 'POST',
-                data:JSON.stringify({ "tool-state": "waiting" }),
-                contentType: 'application/json',
-                success: function(response) {
-                    $.ajax({
-                        url: 'scripts/check.pl',
-                        type: 'GET',
-                        success: function(response) {
-                            console.log("check.pl executed successfully:", response);
-                            pollForCompletion();
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("Error calling check.pl:", xhr.responseText);
-                            $('#run_allocation').text("Run Allocation").prop('disabled', false);
-                        }
-            	    });
+                dataType: 'json',
+                contentType: "application/json",
+                data: function ( d ) {
+                    return JSON.stringify($.extend( {}, d, {
+                        // 'project_id': $('#term-select').val(), 'all': true,
+                        'project_id': $('#project_id').val()
+                    } ));
                 },
-                error: function(xhr, status, error) {
-                    console.error(JSON.parse(xhr.responseText).error);
-                    $('#run_allocation').text("Run Allocation").prop('disabled', false);
+                "dataSrc": function ( json ) {
+                    // $('#status_display').html(tmpl('tmpl-status', json['counts']));
+                    return json['data'];
                 }
-            });
-        })
-
-        $('.btn-search').click(function() {
-            var $searchForm = $(this).closest('form');
-            var searchText = $searchForm.find('.search-input').val().trim().toLowerCase();
-            if (searchText === '') {
-                $searchForm.closest('.tab-pane').find('.table tbody tr').show();
-            } else {
-                $searchForm.closest('.tab-pane').find('.table tbody tr').hide().filter(function() {
-                    var $tds = $(this).find('td');
-                    var found = false;
-                    $tds.each(function() {
-                        if ($(this).text().toLowerCase().indexOf(searchText) > -1) {
-                            found = true;
-                            return false;
-                        }
-                    });
-
-                    return found;
-                }).show();
-            }
-        });
-
-        $('.search-input').keypress(function(event) {
-            if (event.which === 13) {
-                event.preventDefault();
-                $(this).closest('form').find('.btn-search').click();
-            }
-        });
-
-        $('.clear-search').click(function(event) {
-            event.preventDefault();
-            var $searchForm = $(this).closest('form');
-            $searchForm.find('.search-input').val('');
-            $searchForm.closest('.tab-pane').find('.table tbody tr').show();
-        });
-
-        $('#btnDownloadMemberships').click(function(event) {
-            event.preventDefault();
-            var csvData = '';
-            var headers = $('#tbl-user-memberships thead th');
-
-            headers.each(function(index) {
-                if (index > 0) {
-                    csvData += ',';
-                }
-                csvData += $(this).text();
-            });
-
-            csvData += '\n';
-
-            var rows = $('#tbl-user-memberships tbody tr');
-
-            rows.each(function(rowIndex) {
-                var cells = $(this).find('td');
-
-                // Loop through each cell and append its text to CSV data
-                cells.each(function(cellIndex) {
-                    if (cellIndex > 0) {
-                        csvData += ',';
-                    }
-                    csvData += $(this).text();
-                });
-
-                if (rowIndex < rows.length - 1) {
-                    csvData += '\n';
-                }
-            });
-
-            var blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' });
-            var link = document.createElement('a');
-
-            link.href = window.URL.createObjectURL(blob);
-            link.download = 'table_data.csv';
-
-            document.body.appendChild(link);
-            link.click();
-
-            document.body.removeChild(link);
-        });
-
-        $('#assignModal').on('show.bs.modal', function(event) {
-            var button = $(event.relatedTarget); 
-            var studentName = button.data('name');
-	        var studentId = button.data('id');
-            var modal = $(this);
-            var availableGroups = _groups.filter(function(group) {
-                return group.avail_spaces > 0;
-            });
-            
-            $('#studentId').val(studentId);
-            $('#studentIdDisplay').text(studentId);
-            $('#assignedGroup').empty();
-            $('#assignedGroup').append($('<option>', {value: '', text: 'Select from list'}));
-
-            availableGroups.forEach(function(group) {
-                $('#assignedGroup').append($('<option>', {
-                    value: group.group_id,
-                    text: group.group_id + ': ' + group.group_name
-                }));
-            });
-        });
-        
-        $('#min-selections, #max-selections').click(function() {
-        	$('#error-message').empty();
-        	$('#selections-error').empty();
-		    $('#min-selections').removeClass('has-error');
-        });
-
-        $('#frmAssign').submit(function(event) {
-            event.preventDefault();
-            var formData = new FormData(this);
-
-            $.ajax({
-                url: '{{ $assign }}',
-                type: 'POST',
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function(response) {
-                    location.reload();
-                },
-                error: function(xhr, status, error) {
-                    console.error(JSON.parse(xhr.responseText).error);
-                }
-            });
-        })
-
-        function pollForCompletion() {
-            $.ajax({
-                url: '{{ $state }}',
-                type: 'GET',
-                success: function(response) {
-                    if (typeof response === 'string') {
-                        response = JSON.parse(response);
-                    }
-
-                    if (response.success && response.success[0] && (response.success[0].state === "assigned" || response.success[0].state === "error")) {
-                        location.reload();
-                    } else {
-                        setTimeout(pollForCompletion, 5000);
+            },
+            "columns": [
+                { "data" : "EID" },
+                { "data" : "name" },
+                { "data" : "choices", orderable: false,
+                    "createdCell": function (td, cellData, rowData, row, col) {
+                        const choices = rowData['choices'].split(',').map(i => {
+                                                    let k = i.split('~'); return {'rank': k[0], 'group': k[1], 'used': k[2] }
+                                                });
+                        $(td).html(choices.map(i => i['group']).join(', '));
                     }
                 },
-                error: function(xhr, status, error) {
-                    console.error("Error checking status:", xhr.responseText);
-                }
-            });
-        }
-
-        function populateSettings(allocation_settings) {
-            if (allocation_settings.length > 0) {
-                var settings = _settings[0];
-
-                $('#tool-id').val(settings.link_id);
-                $('#tool-name').val(settings.name);
-                $('#instructions').val(settings.instructions);
-                $('#release-date').val(settings.release_date.split(' ')[0]);
-                $('#closing-date').val(settings.closing_date.split(' ')[0]);
-                $('#topics-info').val(settings.groups_doc);
-                $('#min-selections').val(settings.min_selections);
-                $('#max-selections').val(settings.max_selections);
-            }
-        }
-
-        function updateGroupIds() {
-            $('#tblGroupsList tbody tr').each(function(index) {
-        	    var newGroupId = ("000" + (index + 1)).slice(-3);
-                $(this).find('.group-id-cell span').text(newGroupId);
-                $(this).find('.group-id-cell input').val(newGroupId);
-            });
-        }
-
-        function addRow(group) {
-            var projectId = $('#tblGroupsList tbody tr').length + 1;
-            projectId = ("000" + projectId).slice(-3);
-
-            $('#tblGroupsList tbody').append(tmpl('tmpl-option-row', 
-                {'group_id': projectId, 'group_name': '', 'group_size': 1, 'num_students': 0, 'avail_spaces': 1}
-            ));
-
-            updateGroupIds();
-        }
-
-        function validateForm() {
-            var isValid = true;
-            var emptyRows = false;
-            var minSelections = $('#min-selections').val();
-            var maxSelections = $('#max-selections').val();
-            var releaseDate = $('#release-date').val();
-            var closingDate = $('#closing-date').val();
-
-            $('#tblGroupsList tbody tr').each(function() {
-                var groupId = $(this).find('input[name="group-title[]"]').val().trim();
-                var groupSize = $(this).find('input[name="group-size[]"]').val().trim();
-
-                if (groupId === '' || groupSize === '') {
-                    emptyRows = true;
-                    return false;
-                }
-            });
-
-            if (emptyRows) {
-                $('#error-message').html('<span class="fa fa-exclamation" aria-hidden="true"></span> A title is required for all topics.');
-                $('#error-message').show();
-
-                return false;
-            }
-
-            if (minSelections > maxSelections) {
-                $('#selections-error').html('<span class="fa fa-exclamation" aria-hidden="true"></span> Min selections cannot be greater than Max selections.');
-                $('#selections-error').show();
-                $('#min-selections').addClass('has-error');
-
-                return false;
-            } else if(minSelections <= maxSelections) {
-                $('#min-selections').removeClass('has-error');
-                $('#selections-error').html('');
-                $('#selections-error').hide();
-                return isValid;
-            }
-
-            if (releaseDate > closingDtae) {
-                $('#dates-error').html('<span class="fa fa-exclamation" aria-hidden="true"></span> Release date cannot be later than closing date.');
-                $('#dates-error').show();
-                $('#release-date').addClass('has-error');
-                return false;
-           } else if(releaseDate <= closingDate)  {
-                $('#release-date').removeClass('has-error');
-                $('#dates-error').html('');
-                $('#dates-error').hide();
-                return isValid;
-           }
-
-            return isValid;
-        }
-
-        function checkTable() {
-            var tbody = $('#tbl-allocation-choices tbody');
-            var rowCount = tbody.children('tr').not('.no-selections').length;
-
-            if (rowCount === 0) {
-                $('#run_allocation').prop('disabled', true);
-                if (tbody.find('.no-selections').length === 0) {
-                    tbody.append('<tr class="no-selections"><td colspan="4" class="text-center">There are no selections yet</td></tr>');
-                }
-            } else {
-                $('#run_allocation').prop('disabled', false);
-                tbody.find('.no-selections').remove();
-            }
-        }
-
-
-        function populateSelections(user_choices) {
-            var groupedChoices = {};
-
-            user_choices.forEach(function(choice) {
-                var userId = choice.user_id;
-                var fullName = choice.full_name;
-                var groupId = choice.group_id;
-                var groupName = choice.group_name;
-                var assigned = choice.assigned;
-                var choiceId = choice.choice_id;
-
-                if (!groupedChoices[userId]) {
-                    groupedChoices[userId] = {
-                        user_id: userId,
-                        full_name: fullName,
-                        user_name: choice.user_name,
-                        grouped_choices: [],
-                        allocated_to: "Not assigned",
-                        allocated_group: "Not assigned"
-                    };
-                }
-
-                // Push the choice details to grouped_choices
-                groupedChoices[userId].grouped_choices.push({
-                    choice_id: choiceId,
-                    group_id: groupId,
-                    group_name: groupName
-                });
-
-                // If the choice is assigned, update allocated_to and allocated_group
-                if (assigned === 1) {
-                    groupedChoices[userId].allocated_to = groupId;
-                    groupedChoices[userId].allocated_group = groupId + ": " + groupName;
-                }
-            });
-
-            // Sort grouped_choices by choice_id and format them as comma-separated string
-            for (var userId in groupedChoices) {
-                var user = groupedChoices[userId];
-                user.grouped_choices = user.grouped_choices
-                    .sort((a, b) => a.choice_id - b.choice_id)
-                    .map(choice => choice.group_id)
-                    .join(', ');
-            }
-
-            // Convert groupedChoices object to an array
-            var groupedChoicesArray = Object.values(groupedChoices); 
-            $('#tbl-allocation-choices tbody').html(tmpl('tmpl-selections', groupedChoicesArray));
-            $('#tbl-user-memberships tbody').html(tmpl('tmpl-memberships', groupedChoicesArray));
-
-            var selectionsCount = groupedChoicesArray.length;
-            $('#selections').html('<span class="fas fa-poll-h" aria-hidden="true"></span> Selections (' + selectionsCount + ')');
-
-            var hasNotAssigned = groupedChoicesArray.some(function(item) {
-                return item.allocated_group === 'Not assigned';
-            });
-
-            if (!hasNotAssigned) {
-                $('#tbl-user-memberships th:nth-child(4), #tbl-user-memberships td:nth-child(4)').hide();
-            }
-        }
-
-        function setState(state) {
-            $.ajax({
-                url: '{{ $updatestate }}',
-                type: 'POST',
-                data: JSON.stringify({"tool-state": state}),
-                contentType: 'json',
-                success: function(response) {
+                { "data" : "assigned", orderable: false,
+                    "createdCell": function (td, cellData, rowData, row, col) {
+                        const choices = rowData['choices'].split(',').map(i => {
+                                                    let k = i.split('~'); return {'rank': k[0], 'group': k[1], 'used': k[2] }
+                                                }),
+                            selected = choices.filter(i => i['used'] == 1);
+                        $(td).html(selected.map(i => i['group']).join(', '));
+                    }
                 },
-                error: function(xhr, status, error) {
-                    console.error(JSON.parse(xhr.responseText).error);
-                }
-            });
-        }
-    
-        function allocateUsers() {
-            $.ajax({
-                url: '{{ $allocate }}',
-                type: 'GET',
-                contentType: 'json',
-                success: function(response) {
-                    location.reload();
-                },
-                error: function(xhr, status, error) {
-                    console.error(JSON.parse(xhr.responseText).error);
-                }
-            });
-        }
-    
+                { "data": "modified_at", render: function (data, type, row) {
+                    if (data == null) {
+                        return '';
+                    }
+                    return moment(data.replace(' GMT','')).fromNow();
+                }}
+            ],
+            processing: true,
+            serverSide: true,
+            autoWidth: false,
+            pageLength: 20,
+            lengthMenu: [
+                [20, 40, 60, 100],
+                [20, 40, 60, 100],
+            ],
+        });
+
+        student_table.on('draw.dt', function () {
+            console.log( 'Table redrawn tbl-allocation-choices' );
+            postResize();
+        });
     });
-
 </script>

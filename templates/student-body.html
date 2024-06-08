@@ -1,29 +1,18 @@
 <section>
-    <nav class="navbar navbar-default navbar-fixed-top" role="navigation" id="tsugi_tool_nav_bar">  
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="index.php" id="tool-title">Topic Allocator</a>
-            </div>
-        </div>
-    </nav>
     <div id="student-view" class="container mt-5">
-        <div id="tool-details" class="padded" hidden>
+        <div id="tool-details" class="padded">
             <div id="divInstructions">
-                <div id="instructions"></div>
+                <div id="instructions">{{$current_project['instructions']}}</div>
             </div>
             <div class="row">
                 <div style="display: none;" class="text-center" id="assigned_div"></div>
                 <div id="projects-container">
                     <br/>
-                    <h3><span><i class='far fa-hand-point-left' aria-hidden="true"></i></span> My Choices</h3>
+                    <h4><span><i class='far fa-hand-point-left' aria-hidden="true"></i></span> My Choices</h4>
 
                     <form id="frmSubmitChoices" method="post">
+                        <input type="hidden" id="project_id" name="project_id" value="{{$current_project['project_id']}}" />
+
                         <table class="table table-bordered table-rounded" id="tblGroups">
                             <thead class="bg-info">
                                 <tr>
@@ -35,27 +24,10 @@
                         </table>
                         <br/>
 
-                        <button type="submit" id="btnSubmitChoices" name="btnSubmitChoices" class="btn btn-success pull-right">Submit Choices</button>
+                        <button type="submit" id="btnSubmitChoices" name="btnSubmitChoices" class="btn btn-success">Submit Choices</button>
                         <b><span id="error-message" name="error-message" class="text-danger"></span></b>
                     </form>
 
-                    <div class="modal fade" id="statusModal" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <button type="button" class="close text-danger" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true" class="text-danger">&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body">
-                                    <h4 id="statusMessage"></h4>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-danger" data-dismiss="modal" id="closeModalButton">Close</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

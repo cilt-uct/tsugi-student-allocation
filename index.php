@@ -2,34 +2,20 @@
 require_once('../config.php');
 include 'tool-config_dist.php';
 
-require_once "dao/AllocationDAO.php";
-
 use \Tsugi\Core\LTIX;
-use \Tsugi\Core\Settings;
-use \Tsugi\Core\Roster;
-use \Tsugi\UI\SettingsForm;
-use \Allocation\DAO\AllocationDAO;
 
 $LAUNCH = LTIX::requireData();
-$displayname = $USER->displayname;
-$course_settings = Settings::linkGet('json');
-
-$hasRosters = LTIX::populateRoster(false, true, null);
 
 $site_id = $LAUNCH->ltiRawParameter('context_id','none');
-$allocationDAO = new AllocationDAO($PDOX, $CFG->dbprefix, $tool);
-
-$allocation_details = $allocationDAO->getSettings($LINK->id,$site_id);
-$allocation_groups = $allocationDAO->getGroups($LINK->id,$site_id);
-
-$context = [
-  'allocationdetails' => $allocation_details,
-  'allocationgroups' => $allocation_groups,
-  'siteid' => $site_id,
-];
+$EID = $LAUNCH->ltiRawParameter('ext_d2l_username', $LAUNCH->ltiRawParameter('lis_person_sourcedid', $LAUNCH->ltiRawParameter('ext_sakai_eid', $USER->id)));
 
 if ($USER->instructor) {
-  header('Location: ' . addSession('instructor-home.php', $context));
+    $PDOX->queryDie("REPLACE INTO {$CFG->dbprefix}allocation_user (user_id, EID, role) VALUES (:user_id, :EID, :role)",
+                        array(':user_id' => $USER->id, ':EID' => $EID, ':role' => 1000));
+
+    header('Location: ' . addSession('instructor-home.php'));
 } else {
-    header('Location: ' . addSession('student-home.php', $context));
+  $PDOX->queryDie("REPLACE INTO {$CFG->dbprefix}allocation_user (user_id, EID, role) VALUES (:user_id, :EID, :role)",
+                        array(':user_id' => $USER->id, ':EID' => $EID, ':role' => 0));
+    header('Location: ' . addSession('student-home.php'));
 }

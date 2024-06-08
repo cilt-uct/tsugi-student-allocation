@@ -1,132 +1,139 @@
 <?php
 namespace Allocation\DAO;
 
-define("OTHER", 9999);
-
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
-
 class AllocationDAO {
 
     private $PDOX;
     private $p;
-    private $tool;
+    private $link_id;
+    private $site_id;
+    private $user_id;
+    private $EID;
 
-    public function __construct($PDOX, $p, $tool) {
+    public function __construct($PDOX, $p, $link_id, $site_id, $user_id, $EID, $role) {
         $this->PDOX = $PDOX;
         $this->p = $p;
-        $this->tool = $tool;
+        $this->link_id = $link_id;
+        $this->site_id = $site_id;
+        $this->user_id = $user_id;
+        $this->EID = $EID;
+
+        $this->PDOX->queryDie("REPLACE INTO {$this->p}allocation_user (user_id, EID, role) VALUES (:user_id, :EID, :role)",
+                        array(':user_id' => $user_id, ':EID' => $EID, ':role' => $role));
+
+        if ($this->getSite() === false) {
+            # create a default project to save groups into
+            $this->createSite();
+        }
+
+        # Check to see if there is a project for this link and site
+        if ($this->getProject() === false) {
+            # create a default project to save groups into
+            $this->createProject();
+        }
     }
 
-    function configureAllocation($link_id, $user_id, $site_id, $tool_name, $tool_instructions, 
-                                    $min_selections, $max_selections, $release_date, $closing_date,
-                                    $groups_doc, $groups) {
+    function getSite() {
+        $query = "SELECT * FROM {$this->p}allocation_site WHERE link_id = :link_id and site_id = :site_id;";
+        $arr = array(':link_id' => $this->link_id, ':site_id' => $this->site_id);
+        return $this->PDOX->rowDie($query, $arr);
+    }
 
-        try {    
-            // Insert / Update allocation settings 
-            $this->PDOX->queryDie("INSERT INTO {$this->p}`allocation_site`
-                    (`link_id`, `site_id`, `name`, `instructions`, `min_selections`, `max_selections`,
-                    `release_date`, `closing_date`, `groups_doc`, `created_by`)
-                    VALUES (:linkId, :siteId, :toolName, :toolInstructions, :minSelections, 
-                            :maxSelections, :releaseDate, :closingDate, :groupsDocLink, :createdBy)
-                    ON DUPLICATE KEY UPDATE
-                    `name` = VALUES(`name`),
-                    `instructions` = VALUES(`instructions`),
-                    `min_selections` = VALUES(`min_selections`),
-                    `max_selections` = VALUES(`max_selections`),
-                    `release_date` = VALUES(`release_date`),
-                    `closing_date` = VALUES(`closing_date`),
-                    `groups_doc` = VALUES(`groups_doc`),
-                    `created_by` = VALUES(`created_by`)",
-            
-                array(':linkId' => $link_id, ':siteId' => $site_id, ':toolName' => $tool_name, 
-                        ':toolInstructions' => $tool_instructions, ':minSelections' => $min_selections,
-                        ':maxSelections' => $max_selections,':releaseDate' => $release_date,
-                        ':closingDate' => $closing_date,':groupsDocLink' => $groups_doc,':createdBy' => $user_id));
-            
-            // Insert / Update allocation groups 
+    function createSite() {
+        $query = "INSERT INTO {$this->p}allocation_site (link_id, site_id) VALUES (:link_id, :site_id)";
+        $arr = array(':link_id' => $this->link_id, ':site_id' => $this->site_id);
+        return $this->PDOX->rowDie($query, $arr);
+    }
+
+    function getProject() {
+        $query = "SELECT * FROM {$this->p}allocation_project WHERE link_id = :link_id and site_id = :site_id;";
+        $arr = array(':link_id' => $this->link_id, ':site_id' => $this->site_id);
+        return $this->PDOX->rowDie($query, $arr);
+    }
+
+    function createProject() {
+        // Read the file into a string
+        $htmlContent = file_get_contents("templates/default_instructions.html");
+
+        $query = "INSERT INTO {$this->p}allocation_project
+                            (link_id, site_id, instructions, created_by, modified_by) VALUES
+                            (:link_id, :site_id, :instructions, :user_id, :user_id)";
+        $arr = array(':link_id' => $this->link_id, ':site_id' => $this->site_id,
+                        ':instructions' => $htmlContent,
+                        ':user_id' => $this->user_id);
+        return $this->PDOX->rowDie($query, $arr);
+    }
+
+    function getGroups($project_id) {
+        $query = "SELECT `group_id`, `group_name`, `group_size`
+                    FROM {$this->p}allocation_group
+                    WHERE `project_id` = :project_id ORDER BY `group_id` ASC;";
+
+        $arr = array(':project_id' => $project_id);
+        return $this->PDOX->allRowsDie($query, $arr);
+    }
+
+    function updateAllocation($project_id, $link_id, $user_id, $site_id,
+                                    $instructions,
+                                    $min_selections, $max_selections, $release_date, $closing_date,
+                                    $groups) {
+
+        try {
+            // Insert / Update allocation settings
+            $this->PDOX->queryDie("UPDATE {$this->p}allocation_project
+                                        SET
+                                        `link_id` = :linkId,
+                                        `site_id` = :siteId,
+                                        `instructions` = :instructions,
+                                        `min_selections` = :min,
+                                        `max_selections` = :max,
+                                        `release_date` = :release,
+                                        `closing_date` = :closing,
+                                        `modified_by` = :user_id
+                                        WHERE `project_id` = :project_id;",
+                    array(':project_id' => $project_id,
+                            ':linkId' => $link_id, ':siteId' => $site_id,
+                            ':instructions' => $instructions,
+                            ':min' => $min_selections, ':max' => $max_selections,
+                            ':release' => $release_date, ':closing' => $closing_date,
+                            ':user_id' => $user_id));
+
+            // Delete the row if marked for deletion
+            $this->PDOX->queryDie("DELETE FROM {$this->p}allocation_group WHERE `project_id` = :project_id",
+                                    array(':project_id' => $project_id));
+
+            // Insert / Update allocation groups
             foreach ($groups as $group) {
-	        if ($group['delete']) {
-		    // Delete the row if marked for deletion
-                    $this->PDOX->queryDie("DELETE FROM {$this->p}`allocation_group` WHERE `link_id` = :linkId AND `group_id` = :groupId",
-                                    array(':linkId' => $link_id, ':groupId' => $group['id']));
-                } else {
-	        	$this->PDOX->queryDie("INSERT INTO {$this->p}`allocation_group`
-                            (`group_id`, `link_id`, `group_name`, `group_size`, `created_by`)
-                            VALUES (:groupId, :linkId, :groupName, :groupSize, :createdBy)
-                            ON DUPLICATE KEY UPDATE
-                            `group_name` = VALUES(`group_name`),
-                            `group_size` = VALUES(`group_size`),
-                            `created_by` = VALUES(`created_by`)",
-                        array(':groupId' => $group['id'], ':linkId' => $link_id, ':groupName' => $group['title'], 
-                            ':groupSize' => $group['size'], ':createdBy' => $user_id));
-		}
+                $this->PDOX->queryDie("INSERT INTO allocation_group
+                                (`group_id`, `project_id`,
+                                `group_name`,
+                                `group_size`, `created_by`, `modified_by`)
+                                VALUES (:group_id, :project_id,
+                                        :group_name,
+                                        :group_size, :user_id, :user_id)",
+                            array(':group_id' => $group['id'], ':project_id' => $project_id,
+                                ':group_name' => $group['title'],
+                                ':group_size' => $group['size'],
+                                ':user_id' => $user_id));
             }
 
             return true;
-        } catch (PDOException $e) {
-            throw $e;
-            return json_encode(["error" => "PDO Exception: " . $e->getMessage()]);
+        } catch (Exception $e) {
+            return false;
         }
     }
 
-    function getGroups($link_id) {
-        $query = "SELECT * FROM {$this->p}`allocation_group`
-            WHERE `link_id` = :linkId ORDER BY `group_id` ASC;";
+    function getChoices($project_id, $user_id = NULL) {
 
-        $arr = array(':linkId' => $link_id);
-        return $this->PDOX->allRowsDie($query, $arr);
-    }
+        $query = "SELECT `choice`.group_id, `choice`.choice_rank, `choice`.assigned,
+                            `group`.`group_name` AS `group_name`, `group`.`group_size` AS `group_size`
+                    FROM tsugi_dev.allocation_choice `choice`
+                    LEFT JOIN (SELECT `group_id`, `group_name`, `group_size`
+                                FROM `allocation_group` WHERE `project_id` = :project_id) AS `group`
+                                    ON `choice`.`group_id` = `group`.`group_id`
+                    WHERE `choice`.project_id = :project_id";
 
-    function getSettings($link_id, $site_id) {
-        $query = "SELECT * FROM {$this->p}`allocation_site`
-            WHERE `link_id` = :linkId AND `site_id` = :siteId;";
-
-        $arr = array(':linkId' => $link_id, ':siteId' => $site_id);
-        return $this->PDOX->allRowsDie($query, $arr);
-    }
-
-    function addChoices($link_id, $user_id, $user_name, $selectedGroups) {
-        $values = array();
-        $placeholders = array();
-        $query = "REPLACE INTO {$this->p}`allocation_choice`
-            (`link_id`, `user_id`, `user_name`, `group_id`, `choice_id`, `created_by`)
-            VALUES ";
-
-        foreach ($selectedGroups as $group) {
-            $choiceNumber = $group['choice_number'];
-            $groupId = $group['group_id'];
-
-            if (!empty($groupId) && !empty($choiceNumber)) {
-                $placeholders[] = "(:linkId{$groupId}, :userId{$groupId}, :userName{$groupId}, :groupId{$groupId}, :choiceId{$groupId}, :createdBy{$groupId})";
-		$values[":linkId{$groupId}"] = $link_id;
-		$values[":userId{$groupId}"] = $user_id;
-		$values[":userName{$groupId}"] = $user_name;
-                $values[":groupId{$groupId}"] = $groupId;
-                $values[":choiceId{$groupId}"] = $choiceNumber;
-                $values[":createdBy{$groupId}"] = $user_id;
-            }
-        }
-    
-        if (!empty($placeholders)) {
-            $query .= implode(", ", $placeholders);
-            $this->PDOX->queryDie($query, $values);
-        }
-    
-        return true;
-    }
-
-    function getChoices($link_id, $user_id = null) {
-
-	$query = "SELECT `choice`.*, `user`.`displayname` AS `full_name`, `group`.`group_name` AS `group_name`, `group`.`group_size` AS `group_size`
-		FROM   {$this->p}`allocation_choice` AS `choice`
-		LEFT JOIN `lti_user` AS `user` ON `choice`.`user_id` = `user`.`user_key`
-		LEFT JOIN (SELECT `group_id`, `group_name`, `group_size` FROM `allocation_group` WHERE `link_id` = :linkId) AS `group` 
-			ON `choice`.`group_id` = `group`.`group_id` 
-		WHERE `choice`.`link_id` = :linkId";
-	    
-	$arr = array(':linkId' => $link_id);
+        $arr = array(':project_id' => $project_id);
 
         // If user_id is provided, include it in the query and parameters
         if ($user_id !== null) {
@@ -139,12 +146,114 @@ class AllocationDAO {
         return $this->PDOX->allRowsDie($query, $arr);
     }
 
+    function addChoices($project_id, $user_id, $selectedGroups) {
+
+        try {
+            // Delete the row if marked for deletion
+            $this->PDOX->queryDie("DELETE FROM {$this->p}allocation_choice
+                                    WHERE `project_id` = :project_id and `user_id` = :user_id",
+            array(':project_id' => $project_id, ':user_id' => $user_id));
+
+            // Insert / Update allocation groups
+            foreach ($selectedGroups as $group) {
+                $this->PDOX->queryDie("INSERT INTO allocation_choice
+                    (`group_id`, `project_id`,
+                    `user_id`, `choice_rank`,
+                    `created_by`, `modified_by`)
+                    VALUES (:group_id, :project_id,
+                            :user_id, :rank,
+                            :user_id, :user_id)",
+                    array(':group_id' => $group['group_id'], ':project_id' => $project_id,
+                        ':user_id' => $user_id,
+                        ':rank' => $group['choice_number']));
+            }
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    function getAllStudentChoices($project_id, $draw, $offset, $limit,
+                                    $order_column, $order_dir,
+                                    $search_st, $search_regexp) {
+
+        $result = array('draw' => $draw, "recordsTotal" => 0, "recordsFiltered"=> 0, "data" => []);
+        try {
+
+            $query_arr = array(':project_id' => $project_id);
+            $records = $this->PDOX->rowDie("SELECT count(distinct `choice`.`user_id`) as 'c'
+                                FROM allocation_choice `choice`
+                                where `choice`.`project_id` = :project_id", $query_arr);
+
+            $result['recordsTotal'] = $records['c'];
+
+            $search_query = '';
+            if ($search_st !== '') {
+                $search_query = " and (LOCATE(:search, `all_user`.EID) or LOCATE(:search, `user`.displayname)) ";
+                $query_arr[':search'] = $search_st;
+            }
+
+            $records = $this->PDOX->rowDie("SELECT count(distinct `choice`.`user_id`) as 'c'
+                                FROM allocation_choice `choice`
+                                left join allocation_user `all_user` on `all_user`.user_id = `choice`.`user_id`
+                                left join lti_user `user` on `user`.user_id = `choice`.`user_id`
+                                where `choice`.`project_id` = :project_id ". $search_query, $query_arr);
+            $result['recordsFiltered'] = $records['c'];
+
+            switch ($order_column) {
+                case 'EID':
+                    $order_column = '`all_user`.EID';
+                    break;
+                case 'name':
+                    $order_column = '`user`.displayname';
+                    break;
+                case 'modified_at':
+                    $order_column = 'max(`choice`.`modified_at`)';
+                    break;
+            }
+
+            $result['order'] = "ORDER BY ". $order_column ." ". $order_dir;
+
+            $query = "SELECT `all_user`.EID as EID, `user`.displayname as 'name',
+                    group_concat( concat(`choice`.choice_rank,'~',`choice`.group_id,'~', `choice`.`assigned`) order by `choice`.choice_rank) as 'choices',
+                    '0' as 'assigned',
+                    max(`choice`.`modified_at`) as 'modified_at'
+                FROM allocation_choice `choice`
+                left join allocation_user `all_user` on `all_user`.user_id = `choice`.`user_id`
+                left join lti_user `user` on `user`.user_id = `choice`.`user_id`
+                where `choice`.`project_id` = :project_id ". $search_query
+                ." group by `all_user`.EID, `user`.displayname "
+                ." ORDER BY ". $order_column ." ". $order_dir
+                ." limit ". $limit ." offset ". $offset .";";
+
+            $result['data'] = $this->PDOX->allRowsDie($query, $query_arr);
+        } catch (Exception $e) {
+            $result["error"] = "PDO Exception: " . $e->getMessage();
+        }
+
+        return $result;
+    }
+
+    /////////////////////////////
+    // function getSettings($link_id, $site_id) {
+    //     $query = "SELECT * FROM {$this->p}allocation_site
+    //         WHERE `link_id` = :linkId AND `site_id` = :siteId;";
+
+    //     $arr = array(':linkId' => $link_id, ':siteId' => $site_id);
+    //     return $this->PDOX->allRowsDie($query, $arr);
+    // }
+
+
+
+
+
+
     function addAssignments($link_id, $user_id, $assignments) {
-        try { 
+        try {
             $query = "UPDATE {$this->p}`allocation_choice`
                     SET `assigned` = :assigned, `modified_by` = :modifiedBy, `modified_at` = :modifiedAt
                     WHERE `link_id` = :linkId AND `user_id` = :userId AND `group_id` = :groupId";
-        
+
             for ($i = 1; $i < count($assignments); $i++) {
                 $assignment = $assignments[$i];
                 $studentId = ltrim($assignment['student_id'], 's');
@@ -156,16 +265,16 @@ class AllocationDAO {
                 if ($existingAssignedGroup) {
                     $resetArr = array(':linkId' => $link_id, ':userId' => $studentId, ':groupId' => ltrim($existingAssignedGroup, 'p'),
                         ':assigned' => 0, ':modifiedBy' => $user_id, ':modifiedAt' => date("Y-m-d H:i:s"));
-                    
+
                     $this->PDOX->queryDie($query, $resetArr);
                 }
-        
+
                 $arr = array(':linkId' => $link_id, ':userId' => $studentId, ':groupId' => $groupId,
                     ':assigned' => 1, ':modifiedBy' => $user_id, ':modifiedAt' => date("Y-m-d H:i:s"));
 
                 $this->PDOX->queryDie($query, $arr);
             }
-        
+
             return true;
         } catch (PDOException $e) {
             throw $e;
@@ -182,7 +291,7 @@ class AllocationDAO {
     }
 
     function assignUser($link_id, $user_id, $student_id, $group_id) {
-        try { 
+        try {
             $this->PDOX->queryDie("UPDATE {$this->p}`allocation_choice`
                     SET `assigned` = :assigned, `modified_by` = :modifiedBy, `modified_at` = :modifiedAt
                     WHERE `link_id` = :linkId AND `user_id` = :studentId AND `group_id` = :groupId",
@@ -197,12 +306,12 @@ class AllocationDAO {
     }
 
     function setState($link_id, $user_id, $state) {
-        try { 
+        try {
             $this->PDOX->queryDie("UPDATE {$this->p}`allocation_site`
                 SET `state` = :toolState, `modified_by` = :modifiedBy, `modified_at` = :modifiedAt
                 WHERE link_id = :linkId",
             array(':linkId' => $link_id, ':toolState' => $state, ':modifiedBy' => $user_id, ':modifiedAt' => date("Y-m-d H:i:s")));
-    
+
             return  true;
         } catch (PDOException $e) {
             throw $e;

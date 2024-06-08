@@ -1,6 +1,6 @@
 <?php
 // Configuration file - copy from tool-config_dist.php to tool-config.php
-// and then edit. 
+// and then edit.
 
 if ((basename(__FILE__, '.php') != 'tool-config') && (file_exists('tool-config.php'))) {
     include 'tool-config.php';

@@ -16,73 +16,77 @@ $DATABASE_UNINSTALL = array(
 $DATABASE_INSTALL = array(
     array("{$CFG->dbprefix}allocation_site",
         "CREATE TABLE `{$CFG->dbprefix}allocation_site` (
-            `link_id` INT(11) NOT NULL AUTO_INCREMENT,
-            `site_id` VARCHAR(99) NOT NULL,
-            `name` VARCHAR(255) NOT NULL,
-            `instructions` TEXT NULL DEFAULT NULL,
-            `min_selections` INT(11) NOT NULL,
-            `max_selections` INT(11) NOT NULL,
-            `release_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `closing_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `groups_doc` VARCHAR(255),
-            `state` ENUM('open','waiting','running','assigned','error') NOT NULL DEFAULT 'open',
-
-            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `created_by` INT(11) NOT NULL,
-            `modified_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `modified_by` INT(11) NOT NULL DEFAULT 0,
-
-            PRIMARY KEY (`link_id`, `site_id`),
-            INDEX `idx_site_id` (`site_id` ASC)
-        ) ENGINE = InnoDB DEFAULT CHARSET=utf8mb3"
+            `link_id` int NOT NULL,
+            `site_id` varchar(99) NOT NULL,
+        PRIMARY KEY (`link_id`,`site_id`),
+        CONSTRAINT `fk_allocation_site_lti_link1` FOREIGN KEY (`link_id`) REFERENCES `lti_link` (`link_id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB;"
+    ),
+    array("{$CFG->dbprefix}allocation_project",
+        "CREATE TABLE `{$CFG->dbprefix}allocation_project` (
+            `project_id` int NOT NULL AUTO_INCREMENT,
+            `link_id` int NOT NULL,
+            `site_id` varchar(99) NOT NULL,
+            `name` varchar(99) NOT NULL DEFAULT 'Default',
+            `instructions` text,
+            `min_selections` int NOT NULL DEFAULT '1',
+            `max_selections` int NOT NULL DEFAULT '1',
+            `release_date` datetime DEFAULT NULL,
+            `closing_date` datetime DEFAULT NULL,
+            `state` enum('open','waiting','running','assigned','error') NOT NULL DEFAULT 'open',
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `created_by` int NOT NULL DEFAULT '0',
+            `modified_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            `modified_by` int NOT NULL DEFAULT '0',
+            PRIMARY KEY (`project_id`),
+            KEY `idx_site_id` (`name`),
+            KEY `fk_allocation_site_lti_link1_idx` (`project_id`),
+            KEY `fk_allocation_project_allocation_site1_idx` (`link_id`,`site_id`),
+            CONSTRAINT `fk_allocation_project_allocation_site1` FOREIGN KEY (`link_id`, `site_id`) REFERENCES `allocation_site` (`link_id`, `site_id`) ON DELETE CASCADE
+          ) ENGINE=InnoDB;"
     ),
     array("{$CFG->dbprefix}allocation_group",
         "CREATE TABLE `{$CFG->dbprefix}allocation_group` (
-            `group_id` VARCHAR(5) NOT NULL,
-            `link_id` INT(11) NOT NULL,
-            `group_name` VARCHAR(255) NOT NULL,
-            `group_size` VARCHAR(255) NOT NULL,
-            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `created_by` INT(11) NOT NULL,
-            `modified_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `modified_by` INT(11) NOT NULL DEFAULT 0,
-
-            PRIMARY KEY (`group_id`, `link_id`),
-            INDEX `fk_allocation_group_allocation_site_idx` (`link_id` ASC),
-            CONSTRAINT `fk_allocation_group_allocation_site`
-                FOREIGN KEY (`link_id`)
-		REFERENCES `{$CFG->dbprefix}allocation_site` (`link_id`)
-		ON DELETE CASCADE
-                ON UPDATE NO ACTION
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3"
+            `group_id` varchar(5) NOT NULL,
+            `project_id` int NOT NULL,
+            `group_name` varchar(255) NOT NULL,
+            `group_size` varchar(255) NOT NULL,
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `created_by` int NOT NULL,
+            `modified_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `modified_by` int NOT NULL DEFAULT '0',
+        PRIMARY KEY (`group_id`,`project_id`),
+        KEY `fk_allocation_group_allocation_site1_idx` (`project_id`),
+        CONSTRAINT `fk_allocation_group_allocation_site1` FOREIGN KEY (`project_id`) REFERENCES `allocation_project` (`project_id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB;"
     ),
     array( "{$CFG->dbprefix}allocation_choice",
         "CREATE TABLE `{$CFG->dbprefix}allocation_choice` (
-            `link_id` INT(11) NOT NULL,
-            `user_id` INT(11) NOT NULL,
-            `group_id` VARCHAR(5) NOT NULL,
-            `choice_id` INT(11) NOT NULL,
-            `assigned` TINYINT(1) NOT NULL DEFAULT '0',
-
-            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `created_by` VARCHAR(99) NOT NULL,
-            `modified_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `modified_by` VARCHAR(99) NOT NULL DEFAULT 0,
-            
-            PRIMARY KEY (`link_id`, `user_id`, `choice_id`),
-            INDEX `fk_allocation_choice_allocation_group_idx` (`group_id` ASC),
-            INDEX `idx_user_id` (`user_id` ASC),
-            CONSTRAINT `fk_allocation_choice_allocation_group` 
-                FOREIGN KEY (`group_id`) 
-                REFERENCES `{$CFG->dbprefix}allocation_group` (`group_id`) 
-		ON DELETE CASCADE
-		ON UPDATE NO ACTION,
-            CONSTRAINT `fk_allocation_choice_allocation_site`
-                FOREIGN KEY (`link_id`)
-		REFERENCES `{$CFG->dbprefix}allocation_site` (`link_id`)
-		ON DELETE CASCADE
-                ON UPDATE NO ACTION
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3"
+            `group_id` varchar(5) NOT NULL,
+            `user_id` varchar(99) NOT NULL,
+            `project_id` int NOT NULL,
+            `choice_rank` int NOT NULL DEFAULT '1',
+            `assigned` tinyint(1) NOT NULL DEFAULT '0',
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `created_by` varchar(99) NOT NULL,
+            `modified_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `modified_by` varchar(99) NOT NULL DEFAULT '0',
+        PRIMARY KEY (`group_id`,`user_id`,`project_id`),
+        KEY `idx_user_id` (`user_id`),
+        KEY `fk_allocation_choice_allocation_group1_idx` (`group_id`),
+        KEY `fk_allocation_choice_lti_link1_idx` (`project_id`),
+        CONSTRAINT `fk_allocation_choice_allocation_group1` FOREIGN KEY (`group_id`) REFERENCES `allocation_group` (`group_id`) ON DELETE CASCADE,
+        CONSTRAINT `fk_allocation_choice_lti_link1` FOREIGN KEY (`project_id`) REFERENCES `allocation_project` (`project_id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB;"
+    ),
+    array( "{$CFG->dbprefix}allocation_choice",
+        "CREATE TABLE `{$CFG->dbprefix}allocation_user` (
+            `user_id` int NOT NULL,
+            `EID` varchar(10) NOT NULL,
+            `role` int NOT NULL DEFAULT '0',
+        PRIMARY KEY (`user_id`,`EID`),
+        CONSTRAINT `fk_allocation_student_lti_user1` FOREIGN KEY (`user_id`) REFERENCES `lti_user` (`user_id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB;"
     )
 );
 // Database upgrade

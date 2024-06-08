@@ -4,27 +4,37 @@
 <script type="text/x-tmpl" id="tmpl-option-row">
     <tr>
         <td class="group-id-cell" style="vertical-align: middle; font-weight: bold; font-size: 110%;">
-            <span id="group-id" name="group-id" data-id="{%=o.group_id%}">{%=o.group_id%}</span>
-            <input type="hidden" class="form-control" name="group-id[]" id="group-id[]" value="{%=o.group_id%}" readonly>
+            <span name="group-id" data-id="{%=o.group_id%}">{%=o.group_id%}</span>
+            <input type="hidden" class="form-control" name="group-id[]" id="name="group-id[]" value="{%=o.group_id%}" readonly>
         </td>
         <td>
-            <input type="text" class="form-control" name="group-title[]" id="group-title[]" value="{%=o.group_name%}">
+            <input type="text" class="form-control" name="group-title[]" value="{%=o.group_name%}">
         </td>
         <td>
-            <input type="number" class="form-control" name="group-size[]" id="group-size[]" min="1" value="{%=o.group_size%}">
+            <input type="number" class="form-control" name="group-size[]" min="1" value="{%=o.group_size%}">
+        </td>
+        {% if (o.state != 'open') { %}
+        <td>
+            <span name="group-students[]" value="{%=o.num_students%}">{%=o.num_students%}</span>
         </td>
         <td>
-            <span name="group-students[]" id="group-students[]" value="{%=o.num_students%}">{%=o.num_students%}</span>
+            <span name="group-avail[]" value="{%=o.avail_spaces%}">{%=o.avail_spaces%}</span>
         </td>
-        <td>
-            <span name="group-avail[]" id="group-avail[]" value="{%=o.avail_spaces%}">{%=o.avail_spaces%}</span>
-        </td>
-        <td class="text-center">
+        {% } else { %}
+        <td class="text-center" style="vertical-align: middle">
             <a href="#" class="glyphicon glyphicon-remove text-danger delete-row"></a>
-	        <input type="hidden" class="form-control" id="group-delete[]" name="group-delete[]" value="0"/>
         </td>
+        {% } %}
     </tr>
 </script>
+<script type="text/x-tmpl" id="tmpl-error-msg">
+<div class="alert alert-danger" role="alert">
+    <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+    <span class="sr-only">Error:</span>
+    {%=o.msg%}
+</div>
+</script>
+<!-- ----------------------------------------------- -->
 <script type="text/x-tmpl" id="tmpl-selection-row">
     <tr>
         <td>{%=o.user_name%}</td>
@@ -38,25 +48,25 @@
         <td>{%=o.user_name%}</td>
         <td>{%=o.fullname%}</td>
         <td>{%=o.allocated_group%}</td>
-	    <td>{% if (o.allocated_group === 'Not assigned') { %}
-		    <a href="#" class="assign-link" data-toggle="modal" data-target="#assignModal" data-id={%=o.user_name%}>
+        <td>{% if (o.allocated_group === 'Not assigned') { %}
+            <a href="#" class="assign-link" data-toggle="modal" data-target="#assignModal" data-id={%=o.user_name%}>
                 <i class="fas fa-user-plus"></i> Assign
             </a>
         {% } %}
         </td>
     </tr>
 </script>
-<script type="text/x-tmpl" id="tmpl-options"> 
+<script type="text/x-tmpl" id="tmpl-options">
     {% $.each(o, function(i, group) { %}
-        {% include('tmpl-option-row', { 'group_id': group.group_id, 'group_name': group.group_name, 'group_size': group.group_size, 'num_students': group.num_students, 'avail_spaces': group.avail_spaces }); %}
+        {% include('tmpl-option-row', { 'group_id': group.group_id, 'group_name': group.group_name, 'group_size': group.group_size, 'num_students': group.num_students, 'avail_spaces': group.avail_spaces, 'state': group.state }); %}
     {% }); %}
 </script>
-<script type="text/x-tmpl" id="tmpl-selections"> 
+<script type="text/x-tmpl" id="tmpl-selections">
     {% $.each(o, function(i, selection) { %}
         {% include('tmpl-selection-row', { 'user_id': selection.user_id, 'user_name': selection.user_name, 'fullname': selection.full_name, 'grouped_choices': selection.grouped_choices, 'allocated_to': selection.allocated_to }); %}
     {% }); %}
 </script>
-<script type="text/x-tmpl" id="tmpl-memberships"> 
+<script type="text/x-tmpl" id="tmpl-memberships">
     {% $.each(o, function(i, membership) { %}
         {% include('tmpl-membership-row', { 'user_id': membership.user_id, 'user_name': membership.user_name, 'fullname': membership.full_name, 'allocated_group': membership.allocated_group, 'allocated_to': membership.allocated_to }); %}
     {% }); %}
