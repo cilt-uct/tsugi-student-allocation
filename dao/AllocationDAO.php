@@ -195,8 +195,8 @@ class AllocationDAO {
 
             $records = $this->PDOX->rowDie("SELECT count(distinct `choice`.`user_id`) as 'c'
                                 FROM {$this->p}allocation_choice `choice`
-                                left join allocation_user `all_user` on `all_user`.user_id = `choice`.`user_id`
-                                left join lti_user `user` on `user`.user_id = `choice`.`user_id`
+                                left join {$this->p}allocation_user `all_user` on `all_user`.user_id = `choice`.`user_id`
+                                left join {$this->p}lti_user `user` on `user`.user_id = `choice`.`user_id`
                                 where `choice`.`project_id` = :project_id ". $search_query, $query_arr);
             $result['recordsFiltered'] = $records['c'];
 
@@ -219,9 +219,10 @@ class AllocationDAO {
                     '0' as 'assigned',
                     max(`choice`.`modified_at`) as 'modified_at'
                 FROM {$this->p}allocation_choice `choice`
-                left join allocation_user `all_user` on `all_user`.user_id = `choice`.`user_id`
-                left join lti_user `user` on `user`.user_id = `choice`.`user_id`
-                where `choice`.`project_id` = :project_id ". $search_query
+                left join {$this->p}allocation_user `all_user` on `all_user`.user_id = `choice`.`user_id`
+                left join {$this->p}lti_user `user` on `user`.user_id = `choice`.`user_id`
+                left join {$this->p}allocation_group `group` on `group`.`group_id` = `choice`.`group_id` and `group`.`project_id` = `choice`.`project_id`
+		        where `group`.group_id is not null and `choice`.`project_id` = :project_id ". $search_query
                 ." group by `all_user`.EID, `user`.displayname "
                 ." ORDER BY ". $order_column ." ". $order_dir
                 ." limit ". $limit ." offset ". $offset .";";
@@ -235,18 +236,7 @@ class AllocationDAO {
     }
 
     /////////////////////////////
-    // function getSettings($link_id, $site_id) {
-    //     $query = "SELECT * FROM {$this->p}allocation_site
-    //         WHERE `link_id` = :linkId AND `site_id` = :siteId;";
-
-    //     $arr = array(':linkId' => $link_id, ':siteId' => $site_id);
-    //     return $this->PDOX->allRowsDie($query, $arr);
-    // }
-
-
-
-
-
+    // To review ...
 
     function addAssignments($link_id, $user_id, $assignments) {
         try {

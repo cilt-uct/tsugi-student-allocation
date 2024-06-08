@@ -77,7 +77,6 @@ $DATABASE_INSTALL = array(
         KEY `idx_user_id` (`user_id`),
         KEY `fk_allocation_choice_allocation_group1_idx` (`group_id`),
         KEY `fk_allocation_choice_lti_link1_idx` (`project_id`),
-        CONSTRAINT `fk_allocation_choice_allocation_group1` FOREIGN KEY (`group_id`) REFERENCES `allocation_group` (`group_id`) ON DELETE CASCADE,
         CONSTRAINT `fk_allocation_choice_lti_link1` FOREIGN KEY (`project_id`) REFERENCES `allocation_project` (`project_id`) ON DELETE CASCADE
         ) ENGINE=InnoDB;"
     ),

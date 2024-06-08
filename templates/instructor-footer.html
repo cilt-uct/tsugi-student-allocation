@@ -11,9 +11,98 @@
     }
     window.onresize = postResize;
 </script>
+
+<script type="text/javascript">
+    let _groups = {{ json_encode($allocation_groups) }};
+
+    $(document).ready(function(){
+        $('#selections').on('click', function(event) {
+            $('#tbl-allocation-choices').DataTable().ajax.reload();
+        });
+
+        // Load initial setup
+        _groups.forEach(function(group) {
+            // var avail_spaces = group.group_size;
+            // var num_students = 0;
+            // _choices.forEach(function(choice) {
+            //     if (choice.assigned === 1 && choice.group_id === group.group_id) {
+            //         avail_spaces--;
+            //         num_students++;
+            //     }
+            // });
+
+            // group.avail_spaces = avail_spaces;
+            // group.num_students = num_students;
+            group.state = '{{$state}}';
+        });
+
+        $('#tblGroupsList tbody').html(tmpl('tmpl-options', _groups));
+    // Student Selections /////////////////////////////////////////////////////////////////////
+        let student_table = new DataTable('#tbl-allocation-choices', {
+            ajax: {
+                url: '{{ $get_student_selections_url }}',
+                type: 'POST',
+                dataType: 'json',
+                contentType: "application/json",
+                data: function ( d ) {
+                    return JSON.stringify($.extend( {}, d, {
+                        // 'project_id': $('#term-select').val(), 'all': true,
+                        'project_id': $('#project_id').val()
+                    } ));
+                },
+                "dataSrc": function ( json ) {
+                    // $('#status_display').html(tmpl('tmpl-status', json['counts']));
+                    return json['data'];
+                }
+            },
+            "columns": [
+                { "data" : "EID" },
+                { "data" : "name" },
+                { "data" : "choices", orderable: false,
+                    "createdCell": function (td, cellData, rowData, row, col) {
+                        const choices = rowData['choices'].split(',').map(i => {
+                                                    let k = i.split('~'); return {'rank': k[0], 'group': k[1], 'used': k[2] }
+                                                });
+                        $(td).html(choices.map(i => i['group']).join(', '));
+                    }
+                },
+                { "data" : "assigned", orderable: false,
+                    "createdCell": function (td, cellData, rowData, row, col) {
+                        const choices = rowData['choices'].split(',').map(i => {
+                                                    let k = i.split('~'); return {'rank': k[0], 'group': k[1], 'used': k[2] }
+                                                }),
+                            selected = choices.filter(i => i['used'] == 1);
+                        $(td).html(selected.map(i => i['group']).join(', '));
+                    }
+                },
+                { "data": "modified_at", render: function (data, type, row) {
+                    if (data == null) {
+                        return '';
+                    }
+                    return moment(data.replace(' GMT','')).fromNow();
+                }}
+            ],
+            processing: true,
+            serverSide: true,
+            autoWidth: false,
+            pageLength: 20,
+            lengthMenu: [
+                [20, 40, 60, 100],
+                [20, 40, 60, 100],
+            ],
+        });
+
+        student_table.on('draw.dt', function () {
+            console.log( 'Table redrawn tbl-allocation-choices' );
+            postResize();
+        });
+
+        postResize();
+    });
+</script>
+{% if ($state == 'open') { %}
 <script type="text/javascript">
     $(document).ready(function(){
-        let _groups = {{ json_encode($allocation_groups) }};
 
     // Top Form ///////////////////////////////////////////////////////////////////////////////
         $('#help_dates').on('click', function(event){ event.preventDefault(); });
@@ -101,6 +190,7 @@
             ));
 
             updateGroupIds();
+            postResize();
         }
 
         function updateGroupIds() {
@@ -110,24 +200,6 @@
                 $(this).find('.group-id-cell input').val(newGroupId);
             });
         }
-
-        // Load initial setup
-        _groups.forEach(function(group) {
-                // var avail_spaces = group.group_size;
-                // var num_students = 0;
-                // _choices.forEach(function(choice) {
-                //     if (choice.assigned === 1 && choice.group_id === group.group_id) {
-                //         avail_spaces--;
-                //         num_students++;
-                //     }
-                // });
-
-                // group.avail_spaces = avail_spaces;
-                // group.num_students = num_students;
-                group.state = '{{$state}}';
-            });
-
-        $('#tblGroupsList tbody').html(tmpl('tmpl-options', _groups));
 
         // Make sortable
         $("#tblGroupsList tbody").sortable({
@@ -210,6 +282,11 @@
                             type: 'success',
                             time: 2000
                         });
+                        _groups = data['parameters']['groups'];
+                        if ($('#project_state').val() !== data['parameters']['state']) {
+                            // this page has transitioned to another state reload it
+                            location.reload();
+                        }
                     } else {
                         $().msgpopup({
                             text: data['msg'],
@@ -240,65 +317,6 @@
             event.preventDefault();
             location.reload();
         });
-
-    // Student Selections /////////////////////////////////////////////////////////////////////
-        let student_table = new DataTable('#tbl-allocation-choices', {
-            ajax: {
-                url: '{{ $get_student_selections_url }}',
-                type: 'POST',
-                dataType: 'json',
-                contentType: "application/json",
-                data: function ( d ) {
-                    return JSON.stringify($.extend( {}, d, {
-                        // 'project_id': $('#term-select').val(), 'all': true,
-                        'project_id': $('#project_id').val()
-                    } ));
-                },
-                "dataSrc": function ( json ) {
-                    // $('#status_display').html(tmpl('tmpl-status', json['counts']));
-                    return json['data'];
-                }
-            },
-            "columns": [
-                { "data" : "EID" },
-                { "data" : "name" },
-                { "data" : "choices", orderable: false,
-                    "createdCell": function (td, cellData, rowData, row, col) {
-                        const choices = rowData['choices'].split(',').map(i => {
-                                                    let k = i.split('~'); return {'rank': k[0], 'group': k[1], 'used': k[2] }
-                                                });
-                        $(td).html(choices.map(i => i['group']).join(', '));
-                    }
-                },
-                { "data" : "assigned", orderable: false,
-                    "createdCell": function (td, cellData, rowData, row, col) {
-                        const choices = rowData['choices'].split(',').map(i => {
-                                                    let k = i.split('~'); return {'rank': k[0], 'group': k[1], 'used': k[2] }
-                                                }),
-                            selected = choices.filter(i => i['used'] == 1);
-                        $(td).html(selected.map(i => i['group']).join(', '));
-                    }
-                },
-                { "data": "modified_at", render: function (data, type, row) {
-                    if (data == null) {
-                        return '';
-                    }
-                    return moment(data.replace(' GMT','')).fromNow();
-                }}
-            ],
-            processing: true,
-            serverSide: true,
-            autoWidth: false,
-            pageLength: 20,
-            lengthMenu: [
-                [20, 40, 60, 100],
-                [20, 40, 60, 100],
-            ],
-        });
-
-        student_table.on('draw.dt', function () {
-            console.log( 'Table redrawn tbl-allocation-choices' );
-            postResize();
-        });
     });
 </script>
+{% } %}

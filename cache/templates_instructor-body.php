@@ -16,12 +16,12 @@
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav navbar-right">
-                    <li class="active">
+                    <li <?php if ($state == 'open') { ?>class="active"<?php } ?>>
                         <a data-toggle="tab" href="#add-groups-tab" id="topics">
                             <span class="fas fa-edit" aria-hidden="true"></span> Topics
                         </a>
                     </li>
-                    <li>
+                    <li <?php if ($state != 'open') { ?>class="active"<?php } ?>>
                         <a data-toggle="tab" href="#view-choices-tab" id="selections">
                             <span class="fas fa-poll-h" aria-hidden="true"></span> Selections
                         </a>
@@ -31,19 +31,34 @@
         </div>
     </nav>
     <div class="tab-content">
-        <div id="add-groups-tab" class="tab-pane fade in active">
+        <div id="add-groups-tab" class="tab-pane fade <?php if ($state == 'open') { ?>in active<?php } ?>">
 
             <form id="frmAddGroups">
                 <input type="hidden" id="project_id" name="project_id" value="<?php echo $current_project['project_id'] ?>" />
+                <input type="hidden" id="project_state" name="project_state" value="<?php echo $state ?>" />
 
                 <div class="row row-padding" style="margin-top: 2rem;">
                     <div class="col-xs-12" style="margin-top: 2rem;">
-                        <label for="instructions" class="form-label not-required">Instructions:</label>
-                        <textarea class="form-control" id="instructions" name="instructions" rows="3">
-                            <?php echo $current_project['instructions'] ?>
-                        </textarea>
+                        <?php if ($state == 'open') { ?>
+                            <label for="instructions" class="form-label not-required">Instructions:</label>
+                            <textarea class="form-control" id="instructions" name="instructions" rows="3">
+                                <?php echo $current_project['instructions'] ?>
+                            </textarea>
+                        <?php } else { ?>
+                            <div class="css_accordion">
+                                <input type="checkbox" name="accordion-1" id="cb1">
+                                <label for="cb1" class="css_accordionlabel">
+                                    <span>Instructions:</span>
+                                </label>
+
+                                <div class="css_accordioncontent">
+                                    <?php echo $current_project['instructions'] ?>
+                                </div>
+                            </div>
+                        <?php } ?>
                     </div>
                 </div>
+
                 <div class="row row-padding">
                     <div class="col-sm-4 col-xs-12">
                         <div>
@@ -56,7 +71,8 @@
                                                     min="0"
                                                     style="font-weight: bold; text-align: center;"
                                                     data-val="<?php echo $current_project['min_selections'] ?>"
-                                                    value="<?php echo $current_project['min_selections'] ?>"/>
+                                                    value="<?php echo $current_project['min_selections'] ?>"
+                                                    <?php if ($state != 'open') { ?>readonly<?php } ?>/>
                         </span>
                         <span style="padding-left: 0.5rem; position: relative; top: -7px; color: #ccc;"> to </span>
                         <span class="form-inline label-top">
@@ -66,7 +82,8 @@
                                                 placeholder="Max" id="max-selections" name="max-selections"
                                                 style="font-weight: bold; text-align: center;"
                                                 data-val="<?php echo $current_project['max_selections'] ?>"
-                                                value="<?php echo $current_project['max_selections'] ?>"/>
+                                                value="<?php echo $current_project['max_selections'] ?>"
+                                                <?php if ($state != 'open') { ?>readonly<?php } ?>/>
                         </span>
                     </div>
                     <div class="col-sm-8 col-xs-12">
@@ -77,13 +94,15 @@
                             <label for="release-date" class="form-label">Release Date</label>
                             <input type="date" class="form-control" id="release-date" name="release-date"
                                         data-val="<?php echo isset($current_project['release_date']) ? explode(' ',$current_project['release_date'])[0] : '' ?>"
-                                        value="<?php echo isset($current_project['release_date']) ? explode(' ',$current_project['release_date'])[0] : '' ?>"/>
+                                        value="<?php echo isset($current_project['release_date']) ? explode(' ',$current_project['release_date'])[0] : '' ?>"
+                                        <?php if ($state != 'open') { ?>readonly<?php } ?>/>
                         </span>
                         <span class="form-inline label-top">
                             <label for="closing-date" class="form-label">Closing Date</label>
                             <input type="date" class="form-control" id="closing-date" name="closing-date"
                                         data-val="<?php echo isset($current_project['closing_date']) ? explode(' ',$current_project['closing_date'])[0] : '' ?>"
-                                        value="<?php echo isset($current_project['closing_date']) ? explode(' ',$current_project['closing_date'])[0] : '' ?>"/>
+                                        value="<?php echo isset($current_project['closing_date']) ? explode(' ',$current_project['closing_date'])[0] : '' ?>"
+                                        <?php if ($state != 'open') { ?>readonly<?php } ?>/>
                         </span>
                         <span>
                             <a href="#" id="help_dates" class="csstooltip"
@@ -98,15 +117,17 @@
                 <h4>
                     <span class="fas fa-edit" aria-hidden="true"></span>
                     OPTIONS
-                    <button type="button" id="btnAddRow" name="btnAddRow" class="btn btn-primary"
-                    style="margin-left: 3rem; font-size: 1rem; padding: 0.3rem 0.6rem;">
-                    <i class="fas fa-plus"></i> Add Option</button>
-                    <?php if ($participants > 0) { ?>
-                        <small class="alert alert-warning"
-                                style="font-weight: normal; padding: 0.4rem 0.8rem 0.4rem 0.4rem; margin-left: 2rem;">
-                            <i class="fas fa-exclamation-circle"></i>
-                            &nbsp;Students made selection based on the options, changing the options here might affect their choices...
-                        </small>
+                    <?php if ($state == 'open') { ?>
+                        <button type="button" id="btnAddRow" name="btnAddRow" class="btn btn-primary"
+                        style="margin-left: 3rem; font-size: 1rem; padding: 0.3rem 0.6rem;">
+                        <i class="fas fa-plus"></i> Add Option</button>
+                        <?php if ($participants > 0) { ?>
+                            <small class="alert alert-warning"
+                                    style="font-weight: normal; padding: 0.4rem 0.8rem 0.4rem 0.4rem; margin-left: 2rem;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                &nbsp;Students made selection based on the options, changing the options here might affect their choices...
+                            </small>
+                        <?php } ?>
                     <?php } ?>
                 </h4>
                 <table class="table table-bordered table-rounded" id="tblGroupsList">
@@ -129,14 +150,16 @@
                             <td <?php if ($state != "open") { ?>colspan="4"<?php } else { ?>colspan="5"<?php } ?> id="error-groups"></td>
                     </tfoot>
                 </table>
-                <hr/>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-success" id="btnSave">Update Topic</button>
-                    <a href="#" id="btnCancel">Cancel</a>
-                </div>
+                <?php if ($state == 'open') { ?>
+                    <hr/>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-success" id="btnSave">Update Topic</button>
+                        <a href="#" id="btnCancel">Cancel</a>
+                    </div>
+                <?php } ?>
             </form>
         </div>
-        <div id="view-choices-tab" class="tab-pane fade in">
+        <div id="view-choices-tab" class="tab-pane fade <?php if ($state != 'open') { ?>in active<?php } ?>"">
 
             <div id="divSelections">
                 <!-- <button type = "button" id="run_allocation" name="run_allocation" class="btn btn-primary pull-right">Run Allocation</button> -->

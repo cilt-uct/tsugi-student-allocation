@@ -53,6 +53,9 @@ $OUTPUT->topNav($menu);
 $project_started_yet = (isset($current_project['release_date'])) &&
                             ( (new DateTime($current_project['release_date'])) <= (new DateTime()) );
 
+$project_selection_closed = (isset($current_project['release_date'])) &&
+                                ( (new DateTime($current_project['closing_date'])) <= (new DateTime()) );
+
 if ($project_started_yet) {
 
     $groups =
@@ -80,13 +83,19 @@ if ($project_started_yet) {
         'allocation_groups' => $allocationDAO->getGroups($current_project['project_id']),
         'selected_groups' => $allocationDAO->getChoices($current_project['project_id'], $USER->id),
         'add_choice_url' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/process_choices.php'))),
+        'project_closed' => $project_selection_closed
     ]);
     Template::view('templates/student-body.html', $context);
 
     $OUTPUT->footerStart();
 
-    Template::view('templates/student-footer.html', $context);
+    if($project_selection_closed) {
+        Template::view('templates/student-footer-display.html', $context);
+    } else {
+        Template::view('templates/student-footer.html', $context);
+    }
     include('templates/student_tmpl.html');
+
 } else {
     // style=" background-image: linear-gradient(to right top, #d16ba5, #c777b9, #ba83ca, #aa8fd8, #9a9ae1, #8aa7ec, #79b3f4, #69bff8, #52cffe, #41dfff, #46eefa, #5ffbf1);"
     ?>

@@ -47,6 +47,22 @@ const ROLE_LEARNER = 0;
 const ROLE_INSTRUCTOR = 1000;
 */
 
+$project_started_yet = (isset($current_project['release_date'])) &&
+                            ( (new DateTime($current_project['release_date'])) <= (new DateTime()) );
+
+$project_selection_closed = (isset($current_project['release_date'])) &&
+                                ( (new DateTime($current_project['closing_date'])) <= (new DateTime()) );
+
+if ($project_selection_closed) {
+    $instructions = $current_project['instructions'];
+        $instructions = str_replace("{(ReleaseDate)}", $releaseDate, $instructions);
+        $instructions = str_replace("{(ClosingDate)}", $closingDate, $instructions);
+        $instructions = str_replace("{(SelectMin)}", $current_project['min_selections'], $instructions);
+        $instructions = str_replace("{(SelectMax)}", $current_project['max_selections'], $instructions);
+
+    $current_project['instructions'] = $instructions;
+}
+
 $context = [
     'instructor' => $USER->instructor,
     'styles' => [addSession('static/css/app.min.css'), addSession('static/css/custom.css'),
@@ -69,6 +85,9 @@ $context = [
 
     'allocation_groups' => $groups,
     'participants' => $no_users,
+
+    'project_started' => $project_started_yet,
+    'project_closed' => $project_selection_closed,
 
     'configure_url' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/set_configure.php'))),
     'get_student_selections_url' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/get_student_selections.php'))),

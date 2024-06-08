@@ -263,25 +263,25 @@ ul li:last-child {
   background-color: #02caa0;
   color: white;
 }
-.table-rounded {
+.css_accordionle-rounded {
   border-collapse: separate;
   border-spacing: 0;
   border-radius: 15px;
   overflow: hidden;
 }
-.table-rounded thead th:first-child {
+.css_accordionle-rounded thead th:first-child {
   border-top-left-radius: 15px;
 }
-.table-rounded thead th:last-child {
+.css_accordionle-rounded thead th:last-child {
   border-top-right-radius: 15px;
 }
 
 
-.table td.group-id-cell span.error {
+.css_accordionle td.group-id-cell span.error {
   color: #a94442;
 }
 
-.table td .alert {
+.css_accordionle td .alert {
   margin-bottom: 0px;
 }
 
@@ -350,4 +350,59 @@ ul li:last-child {
   top: 50%;
   position: absolute;
   transform: translate(-18%, -175%);
+}
+
+/* Core styles/functionality */
+.css_accordion input {
+  position: absolute;
+  opacity: 0;
+  z-index: -1;
+}
+.css_accordioncontent {
+  height: 0;
+  overflow: hidden;
+  transition: all 0.35s;
+}
+.css_accordion input:checked ~ .css_accordioncontent {
+  /* max-height: 10rem; */
+  height: auto;
+  border-bottom: 1px solid #ccc;
+}
+
+/* Visual styles */
+.css_accordionlabel,
+.css_accordionclose {
+  display: flex;
+  cursor: pointer;
+}
+.css_accordionlabel {
+  /* justify-content: space-between; */
+  padding: 0.5rem;
+  border-bottom: 1px solid #ccc;
+}
+.css_accordionlabel > span {
+  padding-left: 1rem;
+}
+.css_accordionlabel::before {
+  content: "\276F";
+  width: 1em;
+  height: 1em;
+  text-align: center;
+  transform: rotate(90deg) translate(-0%, -50%);
+  transition: all 0.35s;
+  left: 0%;
+  position: relative;
+  top: 5px;
+}
+.css_accordion input:checked + .css_accordionlabel::before {
+  transform: rotate(270deg) translate(-0%, -50%);
+}
+.css_accordioncontent p {
+  margin: 0;
+  padding: 1rem;
+}
+.css_accordionclose {
+  justify-content: flex-end;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
 }

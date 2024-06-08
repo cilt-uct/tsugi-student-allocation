@@ -32,3 +32,40 @@
         </tr>
     {% } %}
 </script>
+<script type="text/x-tmpl" id="tmpl-option-row-read-only">
+
+    {% if (o.options.length > 0) {
+        for (var i = 1; i <= Math.min(o.settings.max_selections, o.options.length); i++) {
+            var choiceForLevel = o.choices.find(c => c.choice_rank === i);
+            console.log(choiceForLevel);
+        %}
+        <tr>
+            <td class="text-center" style="vertical-align: middle; font-size: 1.4rem; font-weight: bold;">
+                {%= i %}
+            </td>
+            <td style="vertical-align: middle; font-size: 1.1rem;">
+                {% if (choiceForLevel) { %}
+                    {%= choiceForLevel['group_id'] %}: {%= choiceForLevel['group_name'] %}
+                {% } else { %}
+                    <span style="color:#ccc">Not Selected</span>
+                {% } %}
+            </td>
+            <td style="text-align:center; vertical-align: middle;">
+                {% if (choiceForLevel) { %}
+                    {% if (o.state === 'assigned') { %}
+                        {%# choiceForLevel['assigned'] ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'%}
+                    {% } else { %}
+                        <span style="color:#ccc" title="Not assigned yet."><i class="fas fa-ellipsis-h"></i></span>
+                    {% } %}
+                {% } else { %}&nbsp;{% } %}
+            </td>
+        </tr>
+        {% }
+    } else { %}
+        <tr>
+            <td colspan="2" style="text-align: center; font-size: 1.2rem; padding: 1.2rem; color: var(--text-light);">
+                The options have not been configured yet. Please check back later.
+            </td>
+        </tr>
+    {% } %}
+</script>

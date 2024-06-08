@@ -61,6 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                         $groups);
         $result['success'] = $out ? 1 : 0;
         $result['msg'] = $out ? 'success' : 'Could not save the topic information.';
+
+        $current_project = $allocationDAO->getProject();
+        $result['parameters']['state'] = isset($current_project['state']) ? $current_project['state'] : 'open';
     } catch (Exception $e) {
         $result['success'] = 0;
     }

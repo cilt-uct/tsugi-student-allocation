@@ -12,20 +12,23 @@
 
                     <form id="frmSubmitChoices" method="post">
                         <input type="hidden" id="project_id" name="project_id" value="{{$current_project['project_id']}}" />
-
                         <table class="table table-bordered table-rounded" id="tblGroups">
                             <thead class="bg-info">
                                 <tr>
-                                    <th class="text-center">Choice #</th>
+                                    <th class="text-center" style="width:24%">Choice #</th>
                                     <th class="text-center">Title</th>
+                                    {% if ($project_closed) {%}
+                                    <th class="text-center" style="width:10%">Assigned</th>
+                                    {% } %}
                                 </tr>
                             </thead>
                             <tbody id="project-list"></tbody>
                         </table>
                         <br/>
-
+                        {% if (!$project_closed) {%}
                         <button type="submit" id="btnSubmitChoices" name="btnSubmitChoices" class="btn btn-success">Submit Choices</button>
                         <b><span id="error-message" name="error-message" class="text-danger"></span></b>
+                        {% } %}
                     </form>
 
                 </div>

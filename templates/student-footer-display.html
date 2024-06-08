@@ -1,0 +1,13 @@
+{% foreach($scripts as $script): %}
+    <script src="{{$script}}" type="text/javascript"></script>
+{% endforeach; %}
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        var _settings = {{ json_encode($allocation_settings) }};
+        var _options = {{ json_encode($allocation_groups) }};
+        var _choices = {{ json_encode($selected_groups) }};
+
+        $('#tblGroups tbody').html(tmpl('tmpl-option-row-read-only', { state: '{{$state}}', settings: _settings, choices: _choices, options: _options }));
+    });
+</script>

@@ -15,12 +15,12 @@
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav navbar-right">
-                    <li class="active">
+                    <li {% if ($state == 'open') { %}class="active"{% } %}>
                         <a data-toggle="tab" href="#add-groups-tab" id="topics">
                             <span class="fas fa-edit" aria-hidden="true"></span> Topics
                         </a>
                     </li>
-                    <li>
+                    <li {% if ($state != 'open') { %}class="active"{% } %}>
                         <a data-toggle="tab" href="#view-choices-tab" id="selections">
                             <span class="fas fa-poll-h" aria-hidden="true"></span> Selections
                         </a>
@@ -30,19 +30,34 @@
         </div>
     </nav>
     <div class="tab-content">
-        <div id="add-groups-tab" class="tab-pane fade in active">
+        <div id="add-groups-tab" class="tab-pane fade {% if ($state == 'open') { %}in active{% } %}">
 
             <form id="frmAddGroups">
                 <input type="hidden" id="project_id" name="project_id" value="{{$current_project['project_id']}}" />
+                <input type="hidden" id="project_state" name="project_state" value="{{$state}}" />
 
                 <div class="row row-padding" style="margin-top: 2rem;">
                     <div class="col-xs-12" style="margin-top: 2rem;">
-                        <label for="instructions" class="form-label not-required">Instructions:</label>
-                        <textarea class="form-control" id="instructions" name="instructions" rows="3">
-                            {{$current_project['instructions']}}
-                        </textarea>
+                        {% if ($state == 'open') { %}
+                            <label for="instructions" class="form-label not-required">Instructions:</label>
+                            <textarea class="form-control" id="instructions" name="instructions" rows="3">
+                                {{$current_project['instructions']}}
+                            </textarea>
+                        {% } else { %}
+                            <div class="css_accordion">
+                                <input type="checkbox" name="accordion-1" id="cb1">
+                                <label for="cb1" class="css_accordionlabel">
+                                    <span>Instructions:</span>
+                                </label>
+
+                                <div class="css_accordioncontent">
+                                    {{$current_project['instructions']}}
+                                </div>
+                            </div>
+                        {% } %}
                     </div>
                 </div>
+
                 <div class="row row-padding">
                     <div class="col-sm-4 col-xs-12">
                         <div>
@@ -55,7 +70,8 @@
                                                     min="0"
                                                     style="font-weight: bold; text-align: center;"
                                                     data-val="{{$current_project['min_selections']}}"
-                                                    value="{{$current_project['min_selections']}}"/>
+                                                    value="{{$current_project['min_selections']}}"
+                                                    {% if ($state != 'open') { %}readonly{% } %}/>
                         </span>
                         <span style="padding-left: 0.5rem; position: relative; top: -7px; color: #ccc;"> to </span>
                         <span class="form-inline label-top">
@@ -65,7 +81,8 @@
                                                 placeholder="Max" id="max-selections" name="max-selections"
                                                 style="font-weight: bold; text-align: center;"
                                                 data-val="{{$current_project['max_selections']}}"
-                                                value="{{$current_project['max_selections']}}"/>
+                                                value="{{$current_project['max_selections']}}"
+                                                {% if ($state != 'open') { %}readonly{% } %}/>
                         </span>
                     </div>
                     <div class="col-sm-8 col-xs-12">
@@ -76,13 +93,15 @@
                             <label for="release-date" class="form-label">Release Date</label>
                             <input type="date" class="form-control" id="release-date" name="release-date"
                                         data-val="{{isset($current_project['release_date']) ? explode(' ',$current_project['release_date'])[0] : ''}}"
-                                        value="{{isset($current_project['release_date']) ? explode(' ',$current_project['release_date'])[0] : ''}}"/>
+                                        value="{{isset($current_project['release_date']) ? explode(' ',$current_project['release_date'])[0] : ''}}"
+                                        {% if ($state != 'open') { %}readonly{% } %}/>
                         </span>
                         <span class="form-inline label-top">
                             <label for="closing-date" class="form-label">Closing Date</label>
                             <input type="date" class="form-control" id="closing-date" name="closing-date"
                                         data-val="{{isset($current_project['closing_date']) ? explode(' ',$current_project['closing_date'])[0] : ''}}"
-                                        value="{{isset($current_project['closing_date']) ? explode(' ',$current_project['closing_date'])[0] : ''}}"/>
+                                        value="{{isset($current_project['closing_date']) ? explode(' ',$current_project['closing_date'])[0] : ''}}"
+                                        {% if ($state != 'open') { %}readonly{% } %}/>
                         </span>
                         <span>
                             <a href="#" id="help_dates" class="csstooltip"
@@ -97,15 +116,17 @@
                 <h4>
                     <span class="fas fa-edit" aria-hidden="true"></span>
                     OPTIONS
-                    <button type="button" id="btnAddRow" name="btnAddRow" class="btn btn-primary"
-                    style="margin-left: 3rem; font-size: 1rem; padding: 0.3rem 0.6rem;">
-                    <i class="fas fa-plus"></i> Add Option</button>
-                    {% if ($participants > 0) { %}
-                        <small class="alert alert-warning"
-                                style="font-weight: normal; padding: 0.4rem 0.8rem 0.4rem 0.4rem; margin-left: 2rem;">
-                            <i class="fas fa-exclamation-circle"></i>
-                            &nbsp;Students made selection based on the options, changing the options here might affect their choices...
-                        </small>
+                    {% if ($state == 'open') { %}
+                        <button type="button" id="btnAddRow" name="btnAddRow" class="btn btn-primary"
+                        style="margin-left: 3rem; font-size: 1rem; padding: 0.3rem 0.6rem;">
+                        <i class="fas fa-plus"></i> Add Option</button>
+                        {% if ($participants > 0) { %}
+                            <small class="alert alert-warning"
+                                    style="font-weight: normal; padding: 0.4rem 0.8rem 0.4rem 0.4rem; margin-left: 2rem;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                &nbsp;Students made selection based on the options, changing the options here might affect their choices...
+                            </small>
+                        {% } %}
                     {% } %}
                 </h4>
                 <table class="table table-bordered table-rounded" id="tblGroupsList">
@@ -128,14 +149,16 @@
                             <td {% if ($state != "open") { %}colspan="4"{% } else { %}colspan="5"{% } %} id="error-groups"></td>
                     </tfoot>
                 </table>
-                <hr/>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-success" id="btnSave">Update Topic</button>
-                    <a href="#" id="btnCancel">Cancel</a>
-                </div>
+                {% if ($state == 'open') { %}
+                    <hr/>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-success" id="btnSave">Update Topic</button>
+                        <a href="#" id="btnCancel">Cancel</a>
+                    </div>
+                {% } %}
             </form>
         </div>
-        <div id="view-choices-tab" class="tab-pane fade in">
+        <div id="view-choices-tab" class="tab-pane fade {% if ($state != 'open') { %}in active{% } %}"">
 
             <div id="divSelections">
                 <!-- <button type = "button" id="run_allocation" name="run_allocation" class="btn btn-primary pull-right">Run Allocation</button> -->

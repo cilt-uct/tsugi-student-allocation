@@ -1,12 +1,17 @@
 {% foreach($scripts as $script): %}
     <script src="{{$script}}" type="text/javascript"></script>
 {% endforeach; %}
-
 <script type="text/javascript">
-    var selectedChoices = [];
-    var currentDate = new Date();
-    var today = currentDate.getFullYear() + '-' + ('0' + (currentDate.getMonth() + 1)).slice(-2) + '-' + ('0' + currentDate.getDate()).slice(-2);
-
+    function postResize() {
+        parent.postMessage(JSON.stringify({
+            subject: "iframeResize",
+            width:  window.innerWidth,
+            height: window.innerHeight
+        }), "*");
+    }
+    window.onresize = postResize;
+</script>
+<script type="text/javascript">
     $(document).ready(function() {
         var _settings = {{ json_encode($allocation_settings) }};
         var _options = {{ json_encode($allocation_groups) }};
@@ -57,5 +62,7 @@
                 _btn.html('Submit Choices').removeClass('disabled').attr('disabled', false);
             });
         });
+
+        postResize();
     });
 </script>
