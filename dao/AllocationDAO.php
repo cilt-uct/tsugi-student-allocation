@@ -127,7 +127,7 @@ class AllocationDAO {
 
         $query = "SELECT `choice`.group_id, `choice`.choice_rank, `choice`.assigned,
                             `group`.`group_name` AS `group_name`, `group`.`group_size` AS `group_size`
-                    FROM tsugi_dev.allocation_choice `choice`
+                    FROM {$this->p}allocation_choice `choice`
                     LEFT JOIN (SELECT `group_id`, `group_name`, `group_size`
                                 FROM `allocation_group` WHERE `project_id` = :project_id) AS `group`
                                     ON `choice`.`group_id` = `group`.`group_id`

@@ -9,8 +9,10 @@ if ( !isset($PDOX) ) {
 // The SQL to uninstall this tool
 $DATABASE_UNINSTALL = array(
     "drop table if exists `{$CFG->dbprefix}allocation_site`",
+    "drop table if exists `{$CFG->dbprefix}allocation_project`",
     "drop table if exists `{$CFG->dbprefix}allocation_group`",
-    "drop table if exists `{$CFG->dbprefix}allocation_choice`"
+    "drop table if exists `{$CFG->dbprefix}allocation_choice`",
+    "drop table if exists `{$CFG->dbprefix}allocation_user`",
 );
 
 $DATABASE_INSTALL = array(
@@ -98,13 +100,6 @@ $DATABASE_UPGRADE = function($oldversion) {
     $add_some_fields = array(
         // --------- Examples below ------
         // array('allocation_group', 'link_id', 'int(11) NOT NULL'),
-        // Add more
-
-        // array('allocation_assignment', 'link_id', 'int(11) NOT NULL'),
-        // Add more
-
-
-        // array('allocation_choice', 'link_id', 'int(11) NOT NULL'),
         // Add more
     );
 

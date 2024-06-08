@@ -53,6 +53,7 @@
                             <label class="form-label">Min</label>
                             <input type="number" class="form-control small-input"
                                                     placeholder="Min" id="min-selections" name="min-selections"
+                                                    min="0"
                                                     style="font-weight: bold; text-align: center;"
                                                     data-val="<?php echo $current_project['min_selections'] ?>"
                                                     value="<?php echo $current_project['min_selections'] ?>"/>
@@ -61,6 +62,7 @@
                         <span class="form-inline label-top">
                             <label class="form-label">Max</label>
                             <input type="number" class="form-control small-input"
+                                                min="0"
                                                 placeholder="Max" id="max-selections" name="max-selections"
                                                 style="font-weight: bold; text-align: center;"
                                                 data-val="<?php echo $current_project['max_selections'] ?>"

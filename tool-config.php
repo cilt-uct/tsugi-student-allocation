@@ -9,5 +9,5 @@ if ((basename(__FILE__, '.php') != 'tool-config') && (file_exists('tool-config.p
 
 # The configuration file - stores the paths to the scripts
 $tool = array();
-$tool['debug'] = TRUE;
+$tool['debug'] = FALSE;
 $tool['active'] = TRUE; # if false will show coming soon page

@@ -56,17 +56,17 @@
         function checkAndSwapDates() {
             var releaseValue = $('#release-date').val();
             var closingValue = $('#closing-date').val();
-            console.log(`releaseValue: ${releaseValue}`);
-            console.log(`closingValue: ${closingValue}`);
 
             if (releaseValue && closingValue) {
                 var releaseDate = new Date(releaseValue);
                 var closingDate = new Date(closingValue);
+
                 if (releaseDate > closingDate) {
                     // Swap the dates
                     $('#release-date').val(closingDate.toISOString().split('T')[0]);
                     $('#closing-date').val(releaseDate.toISOString().split('T')[0]);
-                } else if (releaseDate == closingDate) {
+                } else if (releaseValue == closingValue) {
+                    console.log('same');
                     releaseDate.setDate(releaseDate.getDate() - 1);
                     $('#release-date').val(releaseDate.toISOString().split('T')[0]);
                 }
