@@ -1,7 +1,7 @@
 *.swp
 /_cache/*
 !/_cache/.keep
-cache/*
+cache/*.php
 !cache/*.keep
 .tool-config.php
 cache/templates_instructor-body.php

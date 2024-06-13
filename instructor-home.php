@@ -46,6 +46,7 @@ $no_users = $records[0]['c'];
 const ROLE_LEARNER = 0;
 const ROLE_INSTRUCTOR = 1000;
 */
+$project_is_open = (isset($current_project['state']) ? $current_project['state'] : 'open') == 'open';
 
 $project_started_yet = (isset($current_project['release_date'])) &&
                             ( (new DateTime($current_project['release_date'])) <= (new DateTime()) );
@@ -53,10 +54,10 @@ $project_started_yet = (isset($current_project['release_date'])) &&
 $project_selection_closed = (isset($current_project['release_date'])) &&
                                 ( (new DateTime($current_project['closing_date'])) <= (new DateTime()) );
 
-if ($project_selection_closed) {
+if ($project_selection_closed && !$project_is_open) {
     $instructions = $current_project['instructions'];
-        $instructions = str_replace("{(ReleaseDate)}", $releaseDate, $instructions);
-        $instructions = str_replace("{(ClosingDate)}", $closingDate, $instructions);
+        $instructions = str_replace("{(ReleaseDate)}", $current_project['release_date'], $instructions);
+        $instructions = str_replace("{(ClosingDate)}", $current_project['closing_date'], $instructions);
         $instructions = str_replace("{(SelectMin)}", $current_project['min_selections'], $instructions);
         $instructions = str_replace("{(SelectMax)}", $current_project['max_selections'], $instructions);
 

@@ -23,6 +23,10 @@
                                 </tr>
                             </thead>
                             <tbody id="project-list"></tbody>
+                            <tfoot>
+                                <tr>
+                                    <td {% if ($project_closed) {%} { %}colspan="3"{% } else { %}colspan="2"{% } %} id="error-groups"></td>
+                            </tfoot>
                         </table>
                         <br/>
                         {% if (!$project_closed) {%}
