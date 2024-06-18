@@ -1,13 +1,17 @@
 <script type="text/x-tmpl" id="tmpl-options">
     {% $.each(o, function(i, group) { %}
-        {% include('tmpl-option-row', { 'group_id': group.group_id, 'group_name': group.group_name, 'group_size': group.group_size, 'num_students': group.num_students, 'avail_spaces': group.avail_spaces, 'state': group.state }); %}
+        {% include('tmpl-option-row', group); %}
     {% }); %}
 </script>
 <script type="text/x-tmpl" id="tmpl-option-row">
+    {% let assigned = o.assigned === '0' ? 0 : parseInt(o.assigned, 10);
+        diff = parseInt(o.group_size, 10) - assigned;
+    %}
     <tr>
         <td {% if (o.state == 'open') { %}class="group-id-cell"{% } %}style="vertical-align: middle; font-weight: bold; font-size: 110%;">
             <span name="group-id" data-id="{%=o.group_id%}">{%=o.group_id%}</span>
             <input type="hidden" class="form-control" name="group-id[]" id="name="group-id[]" value="{%=o.group_id%}" readonly>
+            {%=o.state%}
         </td>
         <td>
             <input type="text" class="form-control" name="group-title[]"
@@ -18,18 +22,111 @@
                 value="{%=o.group_size%}" {% if (o.state != 'open') { %}readonly{% } %}>
         </td>
         {% if (o.state != 'open') { %}
-        <td>
-            <span name="group-students[]" value="{%=o.num_students%}">{%=o.num_students%}</span>
+        <td class="middle">
+            <span class="label label-default" name="group-students[]" value="{%=assigned%}">{%=assigned%}</span>
         </td>
-        <td>
-            <span name="group-avail[]" value="{%=o.avail_spaces%}">{%=o.avail_spaces%}</span>
+        <td class="middle">
+            {%  let cls = 'label-default';
+                if (diff < 0) {
+                    cls = 'label-danger';
+                } else if (diff > 0) {
+                    cls = 'label-success';
+                } else {
+                    cls = 'label-info';
+                }
+            %}
+            <span class="label {%=cls%}" name="group-avail[]" value="{%=diff%}">{%=diff%}</span>
         </td>
-        {% } else { %}
+        {% }
+        if (o.state == 'review') { %}
+        <td class="text-center edit" style="vertical-align: middle">
+            <button id="change_group_{%=o.group_id%}" data-id="{%=o.group_id%}">
+                <i class="fas fa-user-edit"></i>
+            </button>
+        </td>
+        {% } else if (o.state == 'open') { %}
         <td class="text-center" style="vertical-align: middle">
             <a href="#" class="glyphicon glyphicon-remove text-danger delete-row"></a>
         </td>
         {% } %}
     </tr>
+</script>
+<script type="text/x-tmpl" id="tmpl-status">
+    {% let lookup = ['Not Assigned', 'Assigned']; %}
+    <li class="{%=(o.selected == '' ? 'active': '')%}">
+        <a class="nav-link"  href="#" rel="">
+            All
+            <span class="badge badge-pill bg-white border ml-2">{%=o.total%}</span>
+        </a>
+    </li>
+    {% $.each(o.counts, function (key, row) { %}
+    <li class="{%=(`${row['status']}` == o.selected ? 'active': '')%}">
+        <a class="nav-link" href="#" rel="{%=row['status']%}">
+            {%=lookup[row['status']]%}
+            <span class="badge badge-pill bg-white border ml-2">{%=(new Intl.NumberFormat().format(row['c']))%}</span>
+        </a>
+    </li>
+    {% }); %}
+</script>
+<script type="text/x-tmpl" id="tmpl-multi-select-option">
+    <option value="{%=o.EID%}">{%=o.name%} ({%=o.current%})</option>
+</script>
+<script type="text/x-tmpl" id="tmpl-multi-select-total">
+    {%  let cls = 'alert-default',
+            diff = o.size - o.assigned;
+        if (diff < 0) {
+            cls = 'alert-danger';
+        } else if (diff > 0) {
+            cls = 'alert-success';
+        } else {
+            cls = 'alert-info';
+        }
+    %}
+    <h5>
+        <span style="padding-right:10px;">Total:</span>
+        <span class="{%=cls%}" role="alert">{%#(''+o.assigned)%}/{%#o.size%}</span>
+    <h5>
+</script>
+<script type="text/x-tmpl" id="tmpl-multi-select">
+    {%
+        const mine = o.students.filter(i => i.mine == 1),
+              other = o.students.filter(i => i.mine == 0);
+    %}
+    <input type="hidden" name="group_id" id="selected_group_id" value="{%=o.group.group_id%}"/>
+    <input type="hidden" name="group_size" id="selected_group_size" value="{%=o.group.group_size%}"/>
+    <input type="text" name="allocation" id="selected_group_allocation" value="{%=mine.map((i,e) => i.EID).join(',')%}"/>
+    <div class="row">
+        <div class="col-xs-12">
+            <h4>{%=o.group.group_id%}: {%=o.group.group_name%}</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-5">
+            <select name="from[]" id="group_assignment_select" class="form-control" size="8" multiple="multiple">
+                {% $.each(mine, function(i, el) { %}
+                {% include('tmpl-multi-select-option', el); %}
+                {% }); %}
+            </select>
+            <div class="text-right" id='selected_group_total'>
+                {% include('tmpl-multi-select-total', {'assigned': o.group.assigned, 'size': o.group.group_size}); %}
+            </div>
+        </div>
+
+        <div class="col-xs-2">
+            <button type="button" id="group_assignment_select_rightAll" class="btn btn-block"><i class="glyphicon glyphicon-forward"></i></button>
+            <button type="button" id="group_assignment_select_rightSelected" class="btn btn-block"><i class="glyphicon glyphicon-chevron-right"></i></button>
+            <button type="button" id="group_assignment_select_leftSelected" class="btn btn-block"><i class="glyphicon glyphicon-chevron-left"></i></button>
+            <button type="button" id="group_assignment_select_leftAll" class="btn btn-block"><i class="glyphicon glyphicon-backward"></i></button>
+        </div>
+
+        <div class="col-xs-5">
+            <select name="to[]" id="group_assignment_select_to" class="form-control" size="8" multiple="multiple">
+                {% $.each(other, function(i, el) { %}
+                {% include('tmpl-multi-select-option', el); %}
+                {% }); %}
+            </select>
+        </div>
+    </div>
 </script>
 <script type="text/x-tmpl" id="tmpl-error-msg">
 <div class="alert alert-danger" role="alert">
@@ -37,37 +134,4 @@
     <span class="sr-only">Error:</span>
     {%=o.msg%}
 </div>
-</script>
-<!-- ----------------------------------------------- -->
-<script type="text/x-tmpl" id="tmpl-selection-row">
-    <tr>
-        <td>{%=o.user_name%}</td>
-        <td>{%=o.fullname%}</td>
-        <td>{%=o.grouped_choices%}</td>
-        <td>{%=o.allocated_to%}</td>
-    </tr>
-</script>
-<script type="text/x-tmpl" id="tmpl-membership-row">
-    <tr>
-        <td>{%=o.user_name%}</td>
-        <td>{%=o.fullname%}</td>
-        <td>{%=o.allocated_group%}</td>
-        <td>{% if (o.allocated_group === 'Not assigned') { %}
-            <a href="#" class="assign-link" data-toggle="modal" data-target="#assignModal" data-id={%=o.user_name%}>
-                <i class="fas fa-user-plus"></i> Assign
-            </a>
-        {% } %}
-        </td>
-    </tr>
-</script>
-
-<script type="text/x-tmpl" id="tmpl-selections">
-    {% $.each(o, function(i, selection) { %}
-        {% include('tmpl-selection-row', { 'user_id': selection.user_id, 'user_name': selection.user_name, 'fullname': selection.full_name, 'grouped_choices': selection.grouped_choices, 'allocated_to': selection.allocated_to }); %}
-    {% }); %}
-</script>
-<script type="text/x-tmpl" id="tmpl-memberships">
-    {% $.each(o, function(i, membership) { %}
-        {% include('tmpl-membership-row', { 'user_id': membership.user_id, 'user_name': membership.user_name, 'fullname': membership.full_name, 'allocated_group': membership.allocated_group, 'allocated_to': membership.allocated_to }); %}
-    {% }); %}
 </script>

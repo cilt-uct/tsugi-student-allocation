@@ -35,7 +35,7 @@ $DATABASE_INSTALL = array(
             `max_selections` int NOT NULL DEFAULT '1',
             `release_date` datetime DEFAULT NULL,
             `closing_date` datetime DEFAULT NULL,
-            `state` enum('open','waiting','running','assigned','error') NOT NULL DEFAULT 'open',
+            `state` enum('open','waiting','running','review','reviewed','assigning','assigned','error') NOT NULL DEFAULT 'open',
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `created_by` int NOT NULL DEFAULT '0',
             `modified_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

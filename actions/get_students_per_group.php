@@ -16,14 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $allocationDAO = new AllocationDAO($PDOX, $CFG->dbprefix, $LINK->id, $site_id, $USER->id, $EID, 1000);
 
-    // Retrieve the raw POST data : Content-Type: application/json
-    $jsonData = file_get_contents('php://input');
-
-    // Decode the JSON data into a PHP associative array
-    $data = json_decode($jsonData, true);
-
-    $result['success'] = $allocationDAO->setState($data['tool-state'])? 1 : 0;;
-    $result['data'] = $result['success']===1 ? 'Inserted' : 'Error Inserting';
+    $current_project = $allocationDAO->getProject();
+    $result['data'] = $allocationDAO->getStudentSelectionPerGroup($current_project['project_id'], $_POST['group_id']);
+    $result['success'] = 1;
 
 }
 

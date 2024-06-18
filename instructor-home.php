@@ -77,6 +77,7 @@ $context = [
                     addSession('static/js/jquery-msgpopup.js'),
                     addSession('static/js/datatables.min.js'),
                     addSession('static/js/Sortable.min.js'),
+                    addSession('static/js/multiselect.min.js'),
                     addSession('static/third-party/trumbowyg/trumbowyg.min.js'),
                     addSession('static/third-party/trumbowyg/plugins/mention/trumbowyg.mention.min.js')],
     'debug' => $tool['debug'],
@@ -90,14 +91,17 @@ $context = [
     'project_started' => $project_started_yet,
     'project_closed' => $project_selection_closed,
 
-    'configure_url' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/set_configure.php'))),
+    'set_configure_url' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/set_configure.php'))),
+    'set_state_url' =>addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/set_state.php'))),
+    'set_student_assign_url' =>addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/set_student_assignment.php'))),
+    'set_group_student_assignment_url' =>addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/set_group_student_assignment.php'))),
+
     'get_student_selections_url' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/get_student_selections.php'))),
+    'get_groups_url' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/get_groups.php'))),
+    'get_student_per_group_url' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/get_students_per_group.php'))),
 
     /////////////////////
     'allocate' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('scripts/perl.php'))),
-
-    'updatestate' =>addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/set_state.php'))),
-    'assign' =>addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/assign.php'))),
     'checkwaitingsites' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('scripts/check.pl'))),
     'get_state_url' => addSession(str_replace("\\","/",$CFG->getCurrentFileUrl('actions/check_state.php'))),
 ];

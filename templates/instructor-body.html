@@ -62,7 +62,7 @@
                         </div>
 
                         <div class="row row-padding">
-                            <div class="col-sm-4 col-xs-12">
+                            <div class="col-sm-5 col-xs-12">
                                 <div>
                                     <label class="form-label"># Selections per student:</label>
                                 </div>
@@ -88,7 +88,7 @@
                                                         {% if ($state != 'open') { %}readonly{% } %}/>
                                 </span>
                             </div>
-                            <div class="col-sm-8 col-xs-12">
+                            <div class="col-sm-7 col-xs-12">
                                 <div>
                                     <label class="form-label">Dates:</label>
                                 </div>
@@ -116,22 +116,27 @@
                             </div>
                         </div>
                         <br/>
-                        <h4>
-                            <span class="fas fa-edit" aria-hidden="true"></span>
-                            OPTIONS
+                        <div style="display: flex; align-items: center;">
+                            <div style="flex: none;">
+                                <h4><i class="fas fa-edit" aria-hidden="true"></i> OPTIONS</h4>
+                            </div>
                             {% if ($state == 'open') { %}
+                            <div>
                                 <button type="button" id="btnAddRow" name="btnAddRow" class="btn btn-primary"
-                                style="margin-left: 3rem; font-size: 1rem; padding: 0.3rem 0.6rem;">
-                                <i class="fas fa-plus"></i> Add Option</button>
+                                    style="margin-left: 3rem; font-size: 1rem; padding: 0.3rem 0.6rem;">
+                                    <i class="fas fa-plus"></i> Add Option
+                                </button>
+                            </div>
+                            <div>
                                 {% if ($participants > 0) { %}
-                                    <small class="alert alert-warning"
-                                            style="font-weight: normal; padding: 0.4rem 0.8rem 0.4rem 0.4rem; margin-left: 2rem;">
-                                        <i class="fas fa-exclamation-circle"></i>
-                                        &nbsp;Students made selection based on the options, changing the options here might affect their choices...
-                                    </small>
+                                    <div class="alert alert-warning" style="display: inline-flex;font-weight: normal;padding: 0.4rem 0.8rem 0.4rem 0.4rem;margin-left: 2rem;align-items: center;justify-content: space-evenly;margin-bottom: 0.3rem;">
+                                        <i class="fas fa-exclamation-circle" style="padding: 1rem;"></i>
+                                        <small style="line-height:1.4rem">Students made selection based on the options, <br/> changing the options here might affect their choices...</small>
+                                    </div>
                                 {% } %}
+                            </div>
                             {% } %}
-                        </h4>
+                        </div>
                         <table class="table table-bordered table-rounded" id="tblGroupsList">
                             <thead class="bg-info">
                                 <tr>
@@ -141,16 +146,20 @@
                                     {% if ($state != "open") { %}
                                         <th class="text-center"># Students</th>
                                         <th class="text-center">Avail Spaces</th>
-                                    {% } else { %}
-                                        <th class="text-center">Action</th>
+                                    {% } %}
+                                    {% if (($state == "open") || ($state == 'review')) { %}
+                                    <th class="text-center">Action</th>
                                     {% } %}
                                 </tr>
                             </thead>
                             <tbody></tbody>
+                            {% if (($state == "open") || ($state == 'review')) { %}
                             <tfoot>
                                 <tr>
-                                    <td {% if ($state != "open") { %}colspan="4"{% } else { %}colspan="5"{% } %} id="error-groups"></td>
+                                    <td {% if ($state != "open") { %}colspan="4"{% } else { %}colspan="6"{% } %} id="error-groups"></td>
+                                </tr>
                             </tfoot>
+                            {% } %}
                         </table>
                         {% if ($state == 'open') { %}
                             <hr/>
@@ -163,8 +172,10 @@
                 </div>
                 <div id="view-choices-tab" class="tab-pane fade {% if ($state != 'open') { %}in active{% } %}"">
                     <div id="divSelections">
-                        <!-- <button type = "button" id="run_allocation" name="run_allocation" class="btn btn-primary pull-right">Run Allocation</button> -->
-                        <!-- <br/><br/> -->
+                        <div style="margin-bottom: 1rem;">
+                            <input type="hidden" id="selected_status" value="" />
+                            <ul class="nav nav-pills justify-content-start" id="status_display"></ul>
+                        </div>
                         <table class="table table-bordered table-rounded" id="tbl-allocation-choices">
                             <thead class="bg-info">
                                 <tr>
@@ -179,56 +190,63 @@
                         </table>
                     </div>
 
-                    <div id="divMemberships" style="display:none;">
-                        <button type="button" class="btn download btn-sm pull-right" id="btnDownloadMemberships">
-                            <span class="glyphicon glyphicon-download"></span> Download CSV
-                        </button>
 
-                        <br/><br/>
-
-                        <h3 id="memberships_title"><span><i class="fa fa-group"></i></span> MEMBERSHIPS</h3>
-                        <table class="table table-bordered table-rounded" id="tbl-user-memberships">
-                            <thead class="bg-info">
-                                <tr>
-                                    <th>Student ID</th>
-                                    <th>Student Name</th>
-                                    <th>Project</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-
-                        <div class="modal fade" id="assignModal" tabindex="-1" role="dialog" aria-labelledby="assignModalLabel" aria-hidden="true">
-                            <div class="modal-dialog" role="document">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                            <span aria-hidden="true">&times;</span>
-                                        </button>
-                                        <h5 class="modal-title" id="assignModalLabel">Assign Student</h5>
-                                    </div>
-                                    <div class="modal-body">
-                                        <form id="frmAssign" method="POST">
-                                            <label for="studentId">Student ID: </label>
-                                            <span id="studentIdDisplay"></span></p>
-                                            <input type="hidden" class="form-control" id="studentId" name="studentId"/>
-                                            <div class="form-group">
-                                                <label for="assignedGroup">Select Group:</label>
-                                                <select class="form-control" id="assignedGroup" name="assignedGroup" required></select>
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="cancel" class="btn btn-danger" data-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-success" id="btnAssign" name="btnAssign">Assign</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="assignModal" tabindex="-1" role="dialog" aria-labelledby="assignModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h5 class="modal-title" id="assignModalLabel">Assign Student</h5>
+                </div>
+                <div class="modal-body">
+                    <form id="frmAssign" method="POST">
+                        <input type="hidden" id="studentId" name="studentId"/>
+                        <input type="hidden" id="type" name="type" value="change"/>
+
+                        <label for="studentId">Student: </label>
+                        <span id="studentDisplay"></span>
+
+                        <div class="form-group">
+                            <label for="assignedGroup">Select Option:</label>
+                            <select class="form-control" id="assignedGroup" name="assignedGroup" required></select>
+                        </div>
+
+                        <div class="modal-footer">
+                            <div id="groupInfo"></div>
+                            <button type="cancel" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success" id="btnAssign" name="btnAssign">Assign</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="groupAssignModal" tabindex="-1" role="dialog" aria-labelledby="groupAssignModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form id="frmGroupAssign" method="POST">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h5 class="modal-title" id="groupAssignModalLabel">Assign Students to Option</h5>
+                    </div>
+                    <div class="modal-body" id="group_assignments">
+                    </div>
+                    <div class="modal-footer">
+                        <div id="groupInfo"></div>
+                        <button type="cancel" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success" id="btnUpdateGroup" name="btnUpdateGroup">Update Allocation</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
