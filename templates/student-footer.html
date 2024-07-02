@@ -1,0 +1,118 @@
+{% foreach($scripts as $script): %}
+    <script src="{{$script}}" type="text/javascript"></script>
+{% endforeach; %}
+<script type="text/javascript">
+    function postResize() {
+        parent.postMessage(JSON.stringify({
+            subject: "iframeResize",
+            width:  window.innerWidth,
+            height: window.innerHeight
+        }), "*");
+    }
+    window.onresize = postResize;
+</script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        var _settings = {{ json_encode($allocation_settings) }};
+        var _options = {{ json_encode($allocation_groups) }};
+        var _choices = {{ json_encode($selected_groups) }};
+
+        $('#tblGroups tbody').html(tmpl('tmpl-option-row', { settings: _settings, choices: _choices, options: _options }));
+
+
+        function validateForm() {
+            let selection = $('#project-list select').map(function() {
+                                                        return {'id': $(this).data('id'), 'val' : $(this).val()};
+                                                    }).get(),
+                not_empty = selection.filter(i => i['val'] !== '').length;
+
+            // Clear out the empty values at the end of the array
+            let lastNonEmptyIndex = selection.length - 1;
+            while (lastNonEmptyIndex >= 0 && selection[lastNonEmptyIndex].val === '') {
+                lastNonEmptyIndex--;
+            }
+            let reduced_selection = selection.slice(0, lastNonEmptyIndex + 1);
+
+            // now move the array values up so that if there is an empty choice then it will be filled in
+            let writeIndex = 0;
+            for (let readIndex = 0; readIndex < reduced_selection .length; readIndex++) {
+                if (reduced_selection [readIndex].val !== '') {
+                    reduced_selection [writeIndex].val = reduced_selection [readIndex].val;
+                    writeIndex++;
+                }
+            }
+            // make the rest empty
+            for (let i = writeIndex; i < reduced_selection.length; i++) {
+                reduced_selection [i].val = '';
+            }
+            // now set the values in the select statement
+            $.each(reduced_selection, function(i, el) { $(`#${el['id']}`).val(el['val']); });
+
+            let not_enough_chosen = not_empty < _settings['min_selections'];
+
+            if (not_enough_chosen) {
+                let no_options_wanted = _settings['min_selections'] - not_empty;
+                $('#error-groups').html(tmpl('tmpl-error-msg', {'msg': `Please select ${no_options_wanted === 1 ? 'one more' : no_options_wanted + ' more option'} (selected ${not_empty} out of ${_settings['min_selections']} required)`}));
+            } else {
+                $('#error-groups').html('');
+            }
+
+            // NOT the errors
+            return !not_enough_chosen; // additional checks can be added later
+        }
+
+        $('#frmSubmitChoices').submit(function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (validateForm()) {
+                const _form = $('#frmSubmitChoices'),
+                  _btn  = $('#btnSubmitChoices'),
+                  _data = new FormData(this);
+
+                // for (var [key, value] of _data.entries()) {
+                //     console.log(key + ': ' + value);
+                // }
+
+                _btn.html('<i class="fa fa-cog fa-spin"></i>&nbsp;&nbsp;Saving ...').addClass('disabled').attr('disabled', true);
+                $.ajax({
+                    url: '{{ $add_choice_url }}',
+                    type: 'POST',
+                    data: _data, dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                }).done(function(data) {
+                    if (data['success'] == 1) {
+                        $().msgpopup({
+                            text: 'Your choices were saved successfully.',
+                            type: 'success',
+                            time: 2000
+                        });
+                    } else {
+                        $().msgpopup({
+                            text: data['msg'],
+                            type: 'error',
+                            time: 5000
+                        });
+                    }
+                }).fail(function() {
+                    $().msgpopup({
+                        text: 'An error occurred while processing your submission. Please try again later.',
+                        type: 'error',
+                        time: 5000
+                    });
+                }).always(function() {
+                    _btn.html('Submit Choices').removeClass('disabled').attr('disabled', false);
+                });
+            } else {
+                $().msgpopup({
+                    text: 'There are some errors in the form.',
+                    type: 'error',
+                    time: 5000
+                });
+            }
+        });
+
+        postResize();
+    });
+</script>
