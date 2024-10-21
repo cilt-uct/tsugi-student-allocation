@@ -11,7 +11,7 @@ http://source.cet.uct.ac.za/svn/sakai/scripts/trunk/groupallocation/
 
 UCT reference:
 --------------
-https://jira.cet.uct.ac.za/browse/VULA-2971
+https://cilt.atlassian.net/browse/VULA-2971
 
 Pre-Requisites
 --------------
